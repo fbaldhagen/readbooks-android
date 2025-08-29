@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">ReadBooks</string>
+    <string name="reader_settings">Reader Settings</string>
+    <string name="toggle_bookmark">Toggle Bookmark</string>
+    <string name="table_of_contents">Table of Contents</string>
+    <string name="add_bookmark">Add Bookmark</string>
+    <string name="remove_bookmark">Remove Bookmark</string>
+</resources>
