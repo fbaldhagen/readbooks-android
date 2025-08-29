@@ -1,8 +1,5 @@
 # ReadBooks - Modern Android E-Book Reader
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Kotlin Version](https://img.shields.io/badge/Kotlin-1.9.22-blue.svg)](https://kotlinlang.org)
-
 ## Features
 
 -   **Local Library Management:**
@@ -36,7 +33,7 @@ This project serves as a showcase of professional, modern Android application ar
 
 ### Technology Stack
 
--   **UI:** 100% [Jetpack Compose](https://developer.android.com/jetpack/compose) for declarative UI development.
+-   **UI:** [Jetpack Compose](https://developer.android.com/jetpack/compose) for declarative UI development.
 -   **Dependency Injection:** [Hilt](https://developer.android.com/training/dependency-injection/hilt-android) for managing dependencies across the app.
 -   **Asynchronous Programming:** [Kotlin Coroutines & Flows](https://kotlinlang.org/docs/coroutines-overview.html) for all asynchronous operations.
 -   **Database:** [Room](https://developer.android.com/training/data-storage/room) for robust, local persistence with reactive query support.
