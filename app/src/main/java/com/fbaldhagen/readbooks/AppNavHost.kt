@@ -36,6 +36,7 @@ fun AppNavHost(
         composable(route = Screen.Home.route) {
             HomeScreen(
                 contentPadding = contentPadding,
+                onConfigureTopBar = onConfigureTopBar,
                 onBookClick = { localId ->
                     navController.navigate(Screen.BookDetails.createRouteForLocal(localId))
                 },
@@ -76,6 +77,7 @@ fun AppNavHost(
 
         composable(route = Screen.Profile.route) {
             ProfileScreen(
+                onConfigureTopBar = onConfigureTopBar,
                 contentPadding = contentPadding,
                 onNavigateToDebug = {
                     navController.navigate(Screen.Debug.route)

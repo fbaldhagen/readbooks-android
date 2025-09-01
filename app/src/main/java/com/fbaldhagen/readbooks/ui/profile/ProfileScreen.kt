@@ -36,6 +36,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -59,29 +60,40 @@ import com.fbaldhagen.readbooks.domain.model.AchievementDetails
 import com.fbaldhagen.readbooks.domain.model.ReadingGoalProgress
 import com.fbaldhagen.readbooks.domain.model.ReadingStreakInfo
 import com.fbaldhagen.readbooks.domain.model.StreakStatus
+import com.fbaldhagen.readbooks.ui.common.TopBarBackground
+import com.fbaldhagen.readbooks.ui.common.TopBarState
 import com.fbaldhagen.readbooks.ui.components.TieredBadgeIcon
 import com.fbaldhagen.readbooks.ui.theme.BadgeColors
-import kotlin.time.Duration.Companion.hours
 
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     contentPadding: PaddingValues,
+    onConfigureTopBar: (TopBarState) -> Unit,
     onNavigateToDebug: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
 
+    LaunchedEffect(Unit) {
+        onConfigureTopBar(
+            TopBarState.Standard(
+                title = "",
+                background = TopBarBackground.Scrim
+            )
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(contentPadding)
     ) {
         ProfileContent(
             state = state,
             onGoalClicked = viewModel::onGoalClicked,
             onDismissGoalDialog = viewModel::onDismissGoalDialog,
             onSaveGoal = viewModel::onSaveGoal,
-            onNavigateToDebug = onNavigateToDebug
+            onNavigateToDebug = onNavigateToDebug,
+            contentPadding = contentPadding
         )
     }
 }
@@ -92,7 +104,8 @@ fun ProfileContent(
     onGoalClicked: () -> Unit,
     onDismissGoalDialog: () -> Unit,
     onSaveGoal: (Int) -> Unit,
-    onNavigateToDebug: () -> Unit
+    onNavigateToDebug: () -> Unit,
+    contentPadding: PaddingValues
 ) {
     val currentYear = java.time.LocalDate.now().year
     var clickCount by remember { mutableIntStateOf(0) }
@@ -109,44 +122,54 @@ fun ProfileContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        StatsSnapshotCard(
-            streakInfo = state.readingStreakInfo,
-            finishedBookCount = state.finishedBookCount,
-            totalReadingTime = state.readingAnalytics.totalReadingTime,
-            longestStreakInDays = state.readingAnalytics.longestStreakInDays,
-            modifier = Modifier.fillMaxWidth()
-        )
+        Column(
+            modifier = Modifier
+                .padding(contentPadding)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            StatsSnapshotCard(
+                streakInfo = state.readingStreakInfo,
+                finishedBookCount = state.finishedBookCount,
+                totalReadingTime = state.readingAnalytics.totalReadingTime,
+                longestStreakInDays = state.readingAnalytics.longestStreakInDays,
+                modifier = Modifier.fillMaxWidth()
+            )
 
-        Text(
-            text = "$currentYear Reading Goal",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(horizontal = 8.dp)
-        )
+            Text(
+                text = "$currentYear Reading Goal",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
 
-        ReadingGoalCard(
-            progress = state.readingGoalProgress,
-            onClick = onGoalClicked
-        )
+            ReadingGoalCard(
+                progress = state.readingGoalProgress,
+                onClick = onGoalClicked
+            )
 
-        if (state.achievements.isNotEmpty()) {
-            AchievementsCard(achievements = state.achievements)
-        }
-
-        ListItem(
-            headlineContent = { Text("Settings") },
-            supportingContent = { Text("Reader preferences and app settings") },
-            trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
-            modifier = Modifier.clickable {
-                clickCount++
-                if (clickCount >= 7) {
-                    clickCount = 0
-                    onNavigateToDebug()
-                }
+            if (state.achievements.isNotEmpty()) {
+                AchievementsCard(achievements = state.achievements)
             }
-        )
+
+            ListItem(
+                headlineContent = { Text("Settings") },
+                supportingContent = { Text("Reader preferences and app settings") },
+                trailingContent = {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null
+                    )
+                },
+                modifier = Modifier.clickable {
+                    clickCount++
+                    if (clickCount >= 7) {
+                        clickCount = 0
+                        onNavigateToDebug()
+                    }
+                }
+            )
+        }
     }
 }
 

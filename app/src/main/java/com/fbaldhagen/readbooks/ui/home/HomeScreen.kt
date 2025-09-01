@@ -19,17 +19,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -49,6 +46,8 @@ import coil.compose.AsyncImage
 import com.fbaldhagen.readbooks.R
 import com.fbaldhagen.readbooks.domain.model.DiscoverBook
 import com.fbaldhagen.readbooks.domain.model.LibraryBook
+import com.fbaldhagen.readbooks.ui.common.TopBarBackground
+import com.fbaldhagen.readbooks.ui.common.TopBarState
 import com.fbaldhagen.readbooks.ui.components.BookCoverItem
 import com.fbaldhagen.readbooks.ui.components.PagingErrorState
 import com.fbaldhagen.readbooks.ui.components.shimmerBackground
@@ -58,22 +57,32 @@ import com.fbaldhagen.readbooks.utils.mapThrowableToUserMessage
 fun HomeScreen(
     onBookClick: (bookId: Long) -> Unit,
     onDiscoverBookClick: (remoteId: String) -> Unit,
+    onConfigureTopBar: (TopBarState) -> Unit,
     contentPadding: PaddingValues,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
     val discoverBooks = viewModel.discoverBooks.collectAsLazyPagingItems()
 
+    LaunchedEffect(Unit) {
+        onConfigureTopBar(
+            TopBarState.Standard(
+                title = "",
+                background = TopBarBackground.Scrim
+            )
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(contentPadding)
     ) {
         HomeContent(
             state = state,
             onBookClick = onBookClick,
             discoverBooks = discoverBooks,
-            onDiscoverBookClick = onDiscoverBookClick
+            onDiscoverBookClick = onDiscoverBookClick,
+            contentPadding = contentPadding
         )
     }
 }
@@ -83,13 +92,14 @@ fun HomeContent(
     state: HomeState,
     onBookClick: (bookId: Long) -> Unit,
     discoverBooks: LazyPagingItems<DiscoverBook>,
-    onDiscoverBookClick: (remoteId: String) -> Unit
+    onDiscoverBookClick: (remoteId: String) -> Unit,
+    contentPadding: PaddingValues
 ) {
     val isLocalContentLoading = state.recentlyReadBooks == null
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 16.dp),
+        contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         item {
