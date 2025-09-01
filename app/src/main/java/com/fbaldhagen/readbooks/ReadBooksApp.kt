@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,6 +49,32 @@ fun ReadBooksApp() {
     val shouldShowBottomBar = currentRoute in bottomBarScreens.map { it.route }
 
     var topBarState: TopBarState by remember { mutableStateOf(TopBarState.Standard()) }
+
+    LaunchedEffect(currentDestination) {
+        when (currentRoute) {
+            Screen.Home.route -> {
+                topBarState = TopBarState.Standard(
+                    background = TopBarBackground.Scrim
+                )
+            }
+
+            Screen.Library.route -> {
+                topBarState = TopBarState.Standard()
+            }
+
+            Screen.Discover.route -> {
+                topBarState = TopBarState.Standard(title = "Discover")
+            }
+
+            Screen.Profile.route -> {
+                topBarState = TopBarState.Standard(title = "Profile")
+            }
+
+            else -> {
+                topBarState = TopBarState.Standard()
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
