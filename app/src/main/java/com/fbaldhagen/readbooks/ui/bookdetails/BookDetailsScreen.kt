@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.fbaldhagen.readbooks.domain.model.LibraryBook
 import com.fbaldhagen.readbooks.domain.model.ReadingStatus
+import com.fbaldhagen.readbooks.ui.common.TopBarState
 import com.fbaldhagen.readbooks.ui.components.BookCoverItem
 import kotlinx.coroutines.launch
 
@@ -41,7 +42,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun BookDetailsScreen(
     viewModel: BookDetailsViewModel = hiltViewModel(),
-    onConfigureDetailTitle: (String) -> Unit,
+    onConfigureTopBar: (TopBarState) -> Unit,
     onNavigateBack: () -> Unit,
     onTocClick: (bookId: Long) -> Unit,
     onReadClick: (bookId: Long) -> Unit,
@@ -63,13 +64,27 @@ fun BookDetailsScreen(
         }
     }
 
-    LaunchedEffect(state.book?.title) {
-        val title = state.book?.title
-        if (!title.isNullOrBlank()) {
-            onConfigureDetailTitle(title)
+    LaunchedEffect(state.book) {
+        val book = state.book
+        val title = book?.title?.takeIf { it.isNotBlank() } ?: "Book Details"
+        val isLocalBook = book?.localId != null
+
+        val topBarActions: @Composable RowScope.() -> Unit = if (isLocalBook) {
+            {
+                IconButton(onClick = { showBottomSheet = true }) {
+                    Icon(Icons.Default.MoreVert, "More options")
+                }
+            }
         } else {
-            onConfigureDetailTitle("Book Details")
+            {}
         }
+
+        onConfigureTopBar(
+            TopBarState.Detail(
+                title = title,
+                actions = topBarActions
+            )
+        )
     }
 
     if (showDeleteDialog) {
@@ -151,15 +166,6 @@ fun BookDetailsScreen(
                     onRatingChanged = viewModel::onRatingChanged,
                     onCancelClick = viewModel::onCancelClicked
                 )
-
-                if (isLocalBook) {
-                    IconButton(
-                        onClick = { showBottomSheet = true },
-                        modifier = Modifier.align(Alignment.TopEnd)
-                    ) {
-                        Icon(Icons.Default.MoreVert, "More options")
-                    }
-                }
             }
         }
     }

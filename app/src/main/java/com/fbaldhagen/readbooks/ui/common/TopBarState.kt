@@ -12,7 +12,8 @@ sealed interface TopBarState {
     ) : TopBarState
 
     data class Detail(
-        val title: String
+        val title: String,
+        val actions: @Composable RowScope.() -> Unit = {}
     ) : TopBarState
 
     data class Search(

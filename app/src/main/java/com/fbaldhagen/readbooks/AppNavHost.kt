@@ -94,7 +94,7 @@ fun AppNavHost(
             arguments = Screen.BookDetails.arguments
         ) {
             BookDetailsScreen(
-                onConfigureDetailTitle = { title -> onConfigureTopBar(TopBarState.Detail(title)) },
+                onConfigureTopBar = onConfigureTopBar,
                 contentPadding = contentPadding,
                 onNavigateBack = { navController.popBackStack() },
                 onReadClick = { bookId ->

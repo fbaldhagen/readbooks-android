@@ -138,7 +138,8 @@ fun ReadBooksApp() {
                             IconButton(onClick = { navController.navigateUp() }) {
                                 Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                             }
-                        }
+                        },
+                        actions = state.actions
                     )
                 }
                 is TopBarState.Search -> {
