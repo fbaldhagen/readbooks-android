@@ -9,6 +9,7 @@ import com.fbaldhagen.readbooks.domain.model.ReadingStatus
 import com.fbaldhagen.readbooks.domain.model.SortType
 import com.fbaldhagen.readbooks.domain.usecase.GetLibraryBooksUseCase
 import com.fbaldhagen.readbooks.domain.usecase.GetTotalBookCountUseCase
+import com.fbaldhagen.readbooks.domain.usecase.ToggleArchiveStatusUseCase
 import com.fbaldhagen.readbooks.ui.common.TopBarState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -23,11 +24,13 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     private val getLibraryBooksUseCase: GetLibraryBooksUseCase,
+    private val toggleArchiveStatusUseCase: ToggleArchiveStatusUseCase,
     private val getTotalBookCountUseCase: GetTotalBookCountUseCase
 ) : ViewModel() {
 
@@ -37,12 +40,11 @@ class LibraryViewModel @Inject constructor(
     private val _displayMode = MutableStateFlow(DisplayMode.GRID)
     private val _isSortSheetVisible = MutableStateFlow(false)
     private val _isFilterSheetVisible = MutableStateFlow(false)
-
     private val _isSearching = MutableStateFlow(false)
     private val _searchQuery = MutableStateFlow(TextFieldValue(""))
-
     private val _activeFilterSource = MutableStateFlow(FilterSource.CHIPS)
     private val _primaryFilter = MutableStateFlow<LibraryFilter>(LibraryFilter.All)
+    private val _isArchiveVisible = MutableStateFlow(false)
 
     private data class LibraryData(
         val books: List<LibraryBook>,
@@ -84,9 +86,15 @@ class LibraryViewModel @Inject constructor(
     private val libraryDataFlow = combine(
         _activeSort,
         effectiveFilterStateFlow,
-        _searchQuery.debounce(300L)
-    ) { sort, effectiveFilter, query ->
-        GetLibraryBooksUseCase.Params(query = query.text, sortType = sort, filters = effectiveFilter)
+        _searchQuery.debounce(300L),
+        _isArchiveVisible
+    ) { sort, effectiveFilter, query, isArchived ->
+        GetLibraryBooksUseCase.Params(
+            query = query.text,
+            sortType = sort,
+            filters = effectiveFilter,
+            showArchived = isArchived
+        )
     }.flatMapLatest { params ->
         combine(
             getLibraryBooksUseCase(params).catch { emit(emptyList()) },
@@ -134,8 +142,15 @@ class LibraryViewModel @Inject constructor(
     val state: StateFlow<LibraryState> = combine(
         libraryDataFlow,
         uiConfigFlow,
-        _primaryFilter
-    ) { data, config, primaryFilter  ->
+        _primaryFilter,
+        _isArchiveVisible
+    ) { data, config, primaryFilter, isArchiveVisible  ->
+        val finalTopBarState = if (config.topBarState is TopBarState.Standard && isArchiveVisible) {
+            config.topBarState.copy(title = "Archive")
+        } else {
+            config.topBarState
+        }
+
         LibraryState(
             isLoading = false,
             books = data.books,
@@ -145,8 +160,9 @@ class LibraryViewModel @Inject constructor(
             activeFilters = config.activeFilters.statuses,
             isSortSheetVisible = config.isSortSheetVisible,
             isFilterSheetVisible = config.isFilterSheetVisible,
-            topBarState = config.topBarState,
-            activePrimaryFilter = primaryFilter
+            topBarState = finalTopBarState,
+            activePrimaryFilter = primaryFilter,
+            isArchiveVisible = isArchiveVisible
         )
     }.stateIn(
         scope = viewModelScope,
@@ -219,5 +235,15 @@ class LibraryViewModel @Inject constructor(
     fun onPrimaryFilterChanged(filter: LibraryFilter) {
         _activeFilterSource.value = FilterSource.CHIPS
         _primaryFilter.value = filter
+    }
+
+    fun onToggleArchiveView() {
+        _isArchiveVisible.update { !it }
+    }
+
+    fun onToggleArchiveStatus(bookId: Long) {
+        viewModelScope.launch {
+            toggleArchiveStatusUseCase(bookId)
+        }
     }
 }

@@ -14,13 +14,15 @@ class GetLibraryBooksUseCase @Inject constructor(
         return bookRepository.getLibraryBooks(
             query = params.query,
             sortType = params.sortType,
-            filters = params.filters
+            filters = params.filters,
+            showArchived = params.showArchived
         )
     }
 
     data class Params(
         val query: String,
         val sortType: SortType,
-        val filters: FilterState
+        val filters: FilterState,
+        val showArchived: Boolean
     )
 }

@@ -46,7 +46,8 @@ class BookRepositoryImpl @Inject constructor(
     override fun getLibraryBooks(
         query: String,
         sortType: SortType,
-        filters: FilterState
+        filters: FilterState,
+        showArchived: Boolean
     ): Flow<List<LibraryBook>> {
         val statusNames: Set<String>? = if (filters.statuses.isNotEmpty()) {
             filters.statuses.map { it.name }.toSet()
@@ -57,7 +58,8 @@ class BookRepositoryImpl @Inject constructor(
         return bookDao.getFilteredSortedBooks(
             query = query.trim(),
             sortType = sortType.name,
-            statuses = statusNames
+            statuses = statusNames,
+            isArchived = showArchived
         ).map { entities ->
             entities.map { bookEntity ->
                 val progress = locatorParser.parseTotalProgression(bookEntity.lastReadLocator)
@@ -365,5 +367,16 @@ class BookRepositoryImpl @Inject constructor(
 
     override fun getTotalBookCount(): Flow<Int> {
         return bookDao.getTotalBookCount()
+    }
+
+    override suspend fun toggleArchiveStatus(bookId: Long) {
+        withContext(Dispatchers.IO) {
+            val currentBook = bookDao.getBookById(bookId)
+
+            currentBook?.let { book ->
+                val newArchiveStatus = !book.isArchived
+                bookDao.setArchiveStatus(bookId, newArchiveStatus)
+            }
+        }
     }
 }

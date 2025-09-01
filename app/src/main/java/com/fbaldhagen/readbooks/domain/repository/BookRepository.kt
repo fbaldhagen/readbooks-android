@@ -17,7 +17,8 @@ interface BookRepository {
     fun getLibraryBooks(
         query: String,
         sortType: SortType,
-        filters: FilterState
+        filters: FilterState,
+        showArchived: Boolean = false
     ): Flow<List<LibraryBook>>
 
     suspend fun addBookToLibrary(filePath: String): Result<Long>
@@ -76,4 +77,6 @@ interface BookRepository {
     fun getBookStreamByRemoteId(remoteId: String): Flow<BookDetails?>
 
     fun getTotalBookCount(): Flow<Int>
+
+    suspend fun toggleArchiveStatus(bookId: Long)
 }

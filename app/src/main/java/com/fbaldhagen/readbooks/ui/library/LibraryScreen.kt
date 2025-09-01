@@ -3,6 +3,7 @@ package com.fbaldhagen.readbooks.ui.library
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,12 +30,15 @@ import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.automirrored.outlined.LibraryBooks
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -50,7 +54,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -91,10 +97,12 @@ fun LibraryScreen(
                 actions = {
                     LibraryActions(
                         displayMode = state.displayMode,
+                        isArchiveVisible = state.isArchiveVisible,
                         onToggleDisplayMode = viewModel::onToggleDisplayMode,
                         onSortClicked = viewModel::onSortClicked,
                         onFilterClicked = viewModel::onFilterClicked,
-                        onSearchClicked = viewModel::onSearchOpened
+                        onSearchClicked = viewModel::onSearchOpened,
+                        onShowArchiveClicked = viewModel::onToggleArchiveView
                     )
                 }
             )
@@ -113,7 +121,8 @@ fun LibraryScreen(
         onDiscoverClick = onNavigateToDiscover,
         onClearFilters = viewModel::onClearFilters,
         modifier = Modifier.padding(contentPadding),
-        onPrimaryFilterChanged = viewModel::onPrimaryFilterChanged
+        onPrimaryFilterChanged = viewModel::onPrimaryFilterChanged,
+        onToggleArchive = viewModel::onToggleArchiveStatus
     )
 
     if (state.isSortSheetVisible) {
@@ -145,10 +154,12 @@ fun LibraryScreen(
 @Composable
 private fun LibraryActions(
     displayMode: DisplayMode,
+    isArchiveVisible: Boolean,
     onToggleDisplayMode: () -> Unit,
     onSortClicked: () -> Unit,
     onFilterClicked: () -> Unit,
-    onSearchClicked: () -> Unit
+    onSearchClicked: () -> Unit,
+    onShowArchiveClicked: () -> Unit
 ) {
     IconButton(onClick = onSearchClicked) {
         Icon(Icons.Default.Search, contentDescription = "Search Library")
@@ -167,6 +178,27 @@ private fun LibraryActions(
     }
     IconButton(onClick = onFilterClicked) {
         Icon(Icons.Default.FilterList, "Filter")
+    }
+
+    var menuExpanded by remember { mutableStateOf(false) }
+
+    Box {
+        IconButton(onClick = { menuExpanded = true }) {
+            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+        }
+        DropdownMenu(
+            expanded = menuExpanded,
+            onDismissRequest = { menuExpanded = false }
+        ) {
+            val menuText = if (isArchiveVisible) "My Library" else "Archived Books"
+            DropdownMenuItem(
+                text = { Text(menuText) },
+                onClick = {
+                    onShowArchiveClicked()
+                    menuExpanded = false
+                }
+            )
+        }
     }
 }
 
@@ -207,10 +239,11 @@ fun LibraryContent(
     onDiscoverClick: () -> Unit,
     onClearFilters: () -> Unit,
     onPrimaryFilterChanged: (LibraryFilter) -> Unit,
+    onToggleArchive: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        if (state.totalBookCountInLibrary > 0 && !state.isLoading) {
+        if (state.totalBookCountInLibrary > 0 && !state.isLoading && !state.isArchiveVisible) {
             FilterChipRow(
                 activeFilter = state.activePrimaryFilter,
                 onFilterSelected = onPrimaryFilterChanged,
@@ -238,12 +271,16 @@ fun LibraryContent(
                     when (state.displayMode) {
                         DisplayMode.GRID -> LibraryGrid(
                             books = state.books,
-                            onBookClick = onBookClick
+                            onBookClick = onBookClick,
+                            isArchiveView = state.isArchiveVisible,
+                            onToggleArchive = onToggleArchive
                         )
 
                         DisplayMode.LIST -> LibraryList(
                             books = state.books,
-                            onBookClick = onBookClick
+                            onBookClick = onBookClick,
+                            isArchiveView = state.isArchiveVisible,
+                            onToggleArchive = onToggleArchive
                         )
                     }
                 }
@@ -255,7 +292,9 @@ fun LibraryContent(
 @Composable
 fun LibraryGrid(
     books: List<LibraryBook>,
-    onBookClick: (localId: Long) -> Unit
+    onBookClick: (localId: Long) -> Unit,
+    isArchiveView: Boolean,
+    onToggleArchive: (Long) -> Unit
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 120.dp),
@@ -264,10 +303,16 @@ fun LibraryGrid(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(books, key = { it.id }) { book ->
-            LibraryBookGridItem(
-                book = book,
-                onClick = { onBookClick(book.id) }
-            )
+            BookItemWithContextMenu(
+                bookId = book.id,
+                isArchived = isArchiveView,
+                onClick = { onBookClick(book.id) },
+                onToggleArchive = onToggleArchive
+            ) {
+                LibraryBookGridItem(
+                    book = book
+                )
+            }
         }
     }
 }
@@ -275,11 +320,10 @@ fun LibraryGrid(
 @Composable
 fun LibraryBookGridItem(
     book: LibraryBook,
-    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.clickable(onClick = onClick),
+        modifier = modifier,
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Box {
@@ -505,11 +549,10 @@ fun FilterOptionsSheet(
 @Composable
 fun LibraryBookListItem(
     book: LibraryBook,
-    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -577,17 +620,25 @@ private fun BookProgress(progress: Float?) {
 @Composable
 fun LibraryList(
     books: List<LibraryBook>,
-    onBookClick: (localId: Long) -> Unit
+    onBookClick: (localId: Long) -> Unit,
+    isArchiveView: Boolean,
+    onToggleArchive: (Long) -> Unit
 ) {
     LazyColumn(
         contentPadding = PaddingValues(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(books, key = { it.id }) { book ->
-            LibraryBookListItem(
-                book = book,
-                onClick = { onBookClick(book.id) }
-            )
+            BookItemWithContextMenu(
+                bookId = book.id,
+                isArchived = isArchiveView,
+                onClick = { onBookClick(book.id) },
+                onToggleArchive = onToggleArchive
+            ) {
+                LibraryBookListItem(
+                    book = book
+                )
+            }
         }
     }
 }
@@ -617,6 +668,41 @@ fun LibraryListPlaceholder() {
                     Box(modifier = Modifier.fillMaxWidth().height(8.dp).shimmerBackground())
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun BookItemWithContextMenu(
+    bookId: Long,
+    isArchived: Boolean,
+    onClick: () -> Unit,
+    onToggleArchive: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    var isContextMenuVisible by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = modifier.combinedClickable(
+            onClick = onClick,
+            onLongClick = { isContextMenuVisible = true }
+        )
+    ) {
+        content()
+
+        DropdownMenu(
+            expanded = isContextMenuVisible,
+            onDismissRequest = { isContextMenuVisible = false }
+        ) {
+            val actionText = if (isArchived) "Unarchive" else "Archive"
+            DropdownMenuItem(
+                text = { Text(actionText) },
+                onClick = {
+                    onToggleArchive(bookId)
+                    isContextMenuVisible = false
+                }
+            )
         }
     }
 }

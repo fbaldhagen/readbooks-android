@@ -17,6 +17,7 @@ data class LibraryState(
     val isFilterSheetVisible: Boolean = false,
     val error: String? = null,
     val activePrimaryFilter: LibraryFilter = LibraryFilter.All,
+    val isArchiveVisible: Boolean = false
 )
 
 enum class DisplayMode { GRID, LIST }

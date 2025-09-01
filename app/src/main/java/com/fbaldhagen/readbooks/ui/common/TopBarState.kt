@@ -6,6 +6,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 
 sealed interface TopBarState {
     data class Standard(
+        val title: String? = null,
         val actions: @Composable RowScope.() -> Unit = {}
     ) : TopBarState
 

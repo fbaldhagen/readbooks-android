@@ -22,6 +22,9 @@ interface BookDao {
     @Query("UPDATE books SET lastOpenedTimestamp = :timestamp WHERE id = :bookId")
     suspend fun updateLastOpenedTimestamp(bookId: Long, timestamp: Long)
 
+    @Query("UPDATE books SET isArchived = :isArchived WHERE id = :bookId")
+    suspend fun setArchiveStatus(bookId: Long, isArchived: Boolean)
+
     @Query("SELECT * FROM books WHERE lastOpenedTimestamp IS NOT NULL ORDER BY lastOpenedTimestamp DESC")
     fun getRecentlyReadBooks(): Flow<List<BookEntity>>
 
@@ -83,6 +86,7 @@ interface BookDao {
             (:query = '' OR title LIKE '%' || :query || '%' OR author LIKE '%' || :query || '%')
         AND
             (:statuses IS NULL OR readingStatus IN (:statuses))
+        AND isArchived = :isArchived    
         ORDER BY
             CASE :sortType
                 WHEN 'TITLE_ASC' THEN title
@@ -96,6 +100,7 @@ interface BookDao {
     fun getFilteredSortedBooks(
         query: String,
         sortType: String,
-        statuses: Set<String>?
+        statuses: Set<String>?,
+        isArchived: Boolean
     ): Flow<List<BookEntity>>
 }

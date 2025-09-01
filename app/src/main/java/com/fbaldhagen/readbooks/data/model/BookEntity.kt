@@ -25,5 +25,6 @@ data class BookEntity(
     val lastReadLocator: String? = null,
     val lastOpenedTimestamp: Long? = null,
     val rating: Int = 0,
-    val readingStatus: ReadingStatus = ReadingStatus.NOT_STARTED
+    val readingStatus: ReadingStatus = ReadingStatus.NOT_STARTED,
+    val isArchived: Boolean = false
 )
