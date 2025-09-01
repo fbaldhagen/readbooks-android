@@ -7,6 +7,7 @@ import com.fbaldhagen.readbooks.data.datasource.local.db.AppDatabase
 import com.fbaldhagen.readbooks.data.datasource.local.db.BookDao
 import com.fbaldhagen.readbooks.data.datasource.local.db.BookmarkDao
 import com.fbaldhagen.readbooks.data.datasource.local.db.CollectionDao
+import com.fbaldhagen.readbooks.data.datasource.local.db.DiscoverBookDao
 import com.fbaldhagen.readbooks.data.datasource.local.db.ReadingSessionDao
 import com.fbaldhagen.readbooks.data.datasource.local.db.UserAchievementDao
 import dagger.Module
@@ -27,9 +28,7 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "readbooks-db"
-        )
-            .addMigrations(AppDatabase.MIGRATION_1_2)
-            .build()
+        ).build()
     }
 
     @Provides
@@ -66,5 +65,11 @@ object AppModule {
     @Singleton
     fun provideCollectionDao(database: AppDatabase): CollectionDao {
         return database.collectionDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideDiscoverBookDao(appDatabase: AppDatabase): DiscoverBookDao {
+        return appDatabase.discoverBookDao()
     }
 }

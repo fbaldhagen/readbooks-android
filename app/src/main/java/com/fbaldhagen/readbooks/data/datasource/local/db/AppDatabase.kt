@@ -9,6 +9,7 @@ import com.fbaldhagen.readbooks.data.model.BookCollectionCrossRefEntity
 import com.fbaldhagen.readbooks.data.model.CollectionEntity
 import com.fbaldhagen.readbooks.data.model.BookEntity
 import com.fbaldhagen.readbooks.data.model.BookmarkEntity
+import com.fbaldhagen.readbooks.data.model.DiscoverBookEntity
 import com.fbaldhagen.readbooks.data.model.ReadingSessionEntity
 import com.fbaldhagen.readbooks.data.model.UserAchievementEntity
 
@@ -19,9 +20,10 @@ import com.fbaldhagen.readbooks.data.model.UserAchievementEntity
         ReadingSessionEntity::class,
         UserAchievementEntity::class,
         CollectionEntity::class,
-        BookCollectionCrossRefEntity::class
+        BookCollectionCrossRefEntity::class,
+        DiscoverBookEntity::class
     ],
-    version = 2,
+    version = 1,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -31,12 +33,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun readingSessionDao(): ReadingSessionDao
     abstract fun userAchievementDao(): UserAchievementDao
     abstract fun collectionDao(): CollectionDao
+    abstract fun discoverBookDao(): DiscoverBookDao
 
     companion object {
-        val MIGRATION_1_2 = object : Migration(1, 2) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE books ADD COLUMN isArchived INTEGER NOT NULL DEFAULT 0")
-            }
-        }
+
     }
 }

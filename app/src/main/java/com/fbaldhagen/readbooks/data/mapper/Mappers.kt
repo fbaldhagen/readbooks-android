@@ -1,6 +1,7 @@
 package com.fbaldhagen.readbooks.data.mapper
 
 import com.fbaldhagen.readbooks.data.model.BookEntity
+import com.fbaldhagen.readbooks.data.model.DiscoverBookEntity
 import com.fbaldhagen.readbooks.data.model.remote.BookDetailDto
 import com.fbaldhagen.readbooks.data.model.remote.BookDto
 import com.fbaldhagen.readbooks.domain.model.Book
@@ -109,4 +110,23 @@ fun String?.formatAuthorName(): String? {
     } else {
         this
     }
+}
+
+fun DiscoverBookEntity.toDomain(): DiscoverBook {
+    return DiscoverBook(
+        id = this.remoteId,
+        title = this.title,
+        author = this.author,
+        coverUrl = this.coverUrl
+    )
+}
+
+fun BookDto.toEntity(query: String): DiscoverBookEntity {
+    return DiscoverBookEntity(
+        remoteId = this.id,
+        title = this.title,
+        author = this.authors.firstOrNull()?.name,
+        coverUrl = this.formats.imageUrl,
+        query = query
+    )
 }

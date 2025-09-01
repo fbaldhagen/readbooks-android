@@ -31,6 +31,7 @@ retrofit2KotlinxSerializationConverter = "1.0.0"
 room = "2.7.2"
 paging = "3.3.6"
 jsoup = "1.18.1"
+roomVersion = "2.6.1"
 uiViewbinding = "1.8.3"
 appcompat = "1.7.1"
 media = "1.4.3"
@@ -52,6 +53,7 @@ androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "j
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 
 androidx-material = { module = "androidx.compose.material:material", version.ref = "materialVersion" }
+androidx-room-paging = { module = "androidx.room:room-paging", version.ref = "roomVersion" }
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-work-runtime = { module = "androidx.work:work-runtime", version.ref = "workRuntime" }

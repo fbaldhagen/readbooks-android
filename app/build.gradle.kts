@@ -85,6 +85,7 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
+    implementation(libs.androidx.room.paging)
 
     // Paging 3 for lazy loading pages
     implementation(libs.paging.runtime)
