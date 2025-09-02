@@ -9,8 +9,7 @@ import javax.inject.Inject
 class GetDiscoverBooksByTopicUseCase @Inject constructor(
     private val discoverRepository: DiscoverRepository
 ) {
-
     operator fun invoke(topic: String): Flow<PagingData<DiscoverBook>> {
-        return discoverRepository.getDiscoverBooksByTopic(topic)
+        return discoverRepository.getBooksByTopic(topic)
     }
 }

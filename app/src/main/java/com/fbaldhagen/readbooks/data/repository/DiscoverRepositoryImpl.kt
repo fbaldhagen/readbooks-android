@@ -7,6 +7,7 @@ import com.fbaldhagen.readbooks.data.datasource.local.db.DiscoverBookDao
 import com.fbaldhagen.readbooks.data.datasource.remote.DiscoverPagingSource
 import com.fbaldhagen.readbooks.data.datasource.remote.GutendexApiService
 import com.fbaldhagen.readbooks.data.mapper.toBookDetails
+import com.fbaldhagen.readbooks.data.model.remote.DiscoverQuery
 import com.fbaldhagen.readbooks.domain.model.BookDetails
 import com.fbaldhagen.readbooks.domain.model.DiscoverBook
 import com.fbaldhagen.readbooks.domain.repository.DiscoverRepository
@@ -20,14 +21,12 @@ class DiscoverRepositoryImpl @Inject constructor(
     private val discoverBookDao: DiscoverBookDao
 ) : DiscoverRepository {
 
-    override fun getDiscoverBooks(searchTerm: String?): Flow<PagingData<DiscoverBook>> {
-        val query = searchTerm?.takeIf { it.isNotBlank() } ?: "popular"
-
+    override fun getPopularBooks(): Flow<PagingData<DiscoverBook>> {
         return Pager(
             config = PagingConfig(pageSize = 32),
             pagingSourceFactory = {
                 DiscoverPagingSource(
-                    query = query,
+                    query = DiscoverQuery.Popular,
                     apiService = gutendexApiService,
                     bookDao = discoverBookDao
                 )
@@ -35,8 +34,30 @@ class DiscoverRepositoryImpl @Inject constructor(
         ).flow
     }
 
-    override fun getDiscoverBooksByTopic(topic: String): Flow<PagingData<DiscoverBook>> {
-        return getDiscoverBooks(topic)
+    override fun getBooksByTopic(topic: String): Flow<PagingData<DiscoverBook>> {
+        return Pager(
+            config = PagingConfig(pageSize = 32),
+            pagingSourceFactory = {
+                DiscoverPagingSource(
+                    query = DiscoverQuery.ByTopic(topic),
+                    apiService = gutendexApiService,
+                    bookDao = discoverBookDao
+                )
+            }
+        ).flow
+    }
+
+    override fun searchBooks(searchTerm: String): Flow<PagingData<DiscoverBook>> {
+        return Pager(
+            config = PagingConfig(pageSize = 32),
+            pagingSourceFactory = {
+                DiscoverPagingSource(
+                    query = DiscoverQuery.BySearch(searchTerm),
+                    apiService = gutendexApiService,
+                    bookDao = discoverBookDao
+                )
+            }
+        ).flow
     }
 
     override suspend fun getRemoteBookDetails(remoteId: String): BookDetails {

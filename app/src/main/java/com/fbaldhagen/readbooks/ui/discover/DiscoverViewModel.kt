@@ -1,32 +1,31 @@
 package com.fbaldhagen.readbooks.ui.discover
 
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.fbaldhagen.readbooks.domain.model.DiscoverBook
 import com.fbaldhagen.readbooks.domain.usecase.GetDiscoverBooksByTopicUseCase
-import com.fbaldhagen.readbooks.domain.usecase.GetDiscoverBooksUseCase
+import com.fbaldhagen.readbooks.domain.usecase.SearchDiscoverBooksUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
-import androidx.compose.ui.text.input.TextFieldValue
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class DiscoverViewModel @Inject constructor(
-    private val getDiscoverBooks: GetDiscoverBooksUseCase,
+    private val searchDiscoverBooks: SearchDiscoverBooksUseCase,
     private val getDiscoverBooksByTopic: GetDiscoverBooksByTopicUseCase
 ) : ViewModel() {
 
@@ -36,11 +35,7 @@ class DiscoverViewModel @Inject constructor(
     private val searchResults: Flow<PagingData<DiscoverBook>> = _searchQuery
         .debounce(500L)
         .flatMapLatest { query ->
-            if (query.text.trim().length < 2) {
-                flowOf(PagingData.empty())
-            } else {
-                getDiscoverBooks(query.text.trim())
-            }
+            searchDiscoverBooks(query.text)
         }
         .cachedIn(viewModelScope)
 

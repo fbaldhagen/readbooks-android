@@ -6,8 +6,8 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.fbaldhagen.readbooks.domain.model.DiscoverBook
 import com.fbaldhagen.readbooks.domain.model.HomeContent
-import com.fbaldhagen.readbooks.domain.usecase.GetDiscoverBooksUseCase
 import com.fbaldhagen.readbooks.domain.usecase.GetHomeContentUseCase
+import com.fbaldhagen.readbooks.domain.usecase.GetPopularBooksUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,7 +21,7 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     getHomeContentUseCase: GetHomeContentUseCase,
-    getDiscoverBooksUseCase: GetDiscoverBooksUseCase
+    getPopularBooksUseCase: GetPopularBooksUseCase
 ) : ViewModel() {
     private val homeContentFlow: Flow<HomeContent> = getHomeContentUseCase()
 
@@ -79,5 +79,5 @@ class HomeViewModel @Inject constructor(
         )
 
     val discoverBooks: Flow<PagingData<DiscoverBook>> =
-        getDiscoverBooksUseCase(null).cachedIn(viewModelScope)
+        getPopularBooksUseCase().cachedIn(viewModelScope)
 }
