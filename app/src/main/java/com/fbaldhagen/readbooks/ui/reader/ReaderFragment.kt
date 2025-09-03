@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import org.readium.r2.navigator.Decoration
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.input.InputListener
 import org.readium.r2.navigator.input.TapEvent
@@ -38,6 +39,8 @@ class ReaderFragment : Fragment(R.layout.fragment_reader) {
 
     private val navigator: EpubNavigatorFragment?
         get() = childFragmentManager.findFragmentByTag(NAVIGATOR_TAG) as? EpubNavigatorFragment
+
+    private val ttsGroup = "tts-highlight-group"
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -67,6 +70,19 @@ class ReaderFragment : Fragment(R.layout.fragment_reader) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.state
+                    .map { it.ttsPlaybackState }
+                    .distinctUntilChanged()
+                    .collect { playbackState ->
+                        if (playbackState != TtsPlaybackState.PLAYING) {
+                            navigator?.applyDecorations(emptyList(), group = ttsGroup)
+                        }
+                    }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.state
                     .map { it.preferences.theme }
                     .distinctUntilChanged()
                     .collect { theme ->
@@ -90,10 +106,26 @@ class ReaderFragment : Fragment(R.layout.fragment_reader) {
                             navigator?.go(event.locator, animated = true)
                             (parentFragmentManager.findFragmentByTag(ReaderDetailsDialogFragment.TAG) as? ReaderDetailsDialogFragment)?.dismiss()
                         }
+
+                        is ReaderEvent.HighlightTtsUtterance -> {
+                            highlightUtterance(event.locator)
+                        }
                     }
                 }
             }
         }
+    }
+
+    private suspend fun highlightUtterance(locator: Locator) {
+        val highlightColor = ContextCompat.getColor(requireContext(), R.color.color_accent_highlight)
+
+        val decoration = Decoration(
+            id = "tts-utterance-highlight",
+            locator = locator,
+            style = Decoration.Style.Highlight(tint = highlightColor)
+        )
+
+        navigator?.applyDecorations(listOf(decoration), group = ttsGroup)
     }
 
     @ColorRes

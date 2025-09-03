@@ -101,6 +101,7 @@ dependencies {
     implementation(libs.readium.shared)
     implementation(libs.readium.opds)
     implementation(libs.readium.lcp)
+    implementation(libs.readium.tts)
 
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.work.runtime.ktx)

@@ -20,10 +20,23 @@ data class ReaderState @OptIn(ExperimentalReadiumApi::class) constructor(
     val isSystemUiVisible: Boolean = true,
     val bookmarks: List<Bookmark> = emptyList(),
     val isCurrentPageBookmarked: Boolean = false,
-    val tableOfContents: List<Link> = emptyList()
+    val tableOfContents: List<Link> = emptyList(),
+    val isTtsAvailable: Boolean = false,
+    val ttsPlaybackState: TtsPlaybackState = TtsPlaybackState.IDLE,
+    val ttsError: String? = null
 )
 
 sealed interface ReaderEvent {
     data class ShowToast(val message: String) : ReaderEvent
-    data class GoTo(val locator: Locator) : ReaderEvent
+    data class GoTo(val locator: Locator, val animated: Boolean = true) : ReaderEvent
+    data class HighlightTtsUtterance(val locator: Locator) : ReaderEvent
+}
+
+enum class TtsPlaybackState {
+    IDLE,
+    BUFFERING,
+    PLAYING,
+    PAUSED,
+    FINISHED,
+    ERROR
 }

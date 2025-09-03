@@ -100,6 +100,7 @@ paging-compose = { group = "androidx.paging", name = "paging-compose", version.r
 readium-navigator-epub = { module = "org.readium.r2:readium-navigator-epub", version.ref = "readiumNavigatorEpub" }
 readium-navigator = { module = "org.readium.kotlin-toolkit:readium-navigator", version.ref = "readium" }
 readium-streamer = { module = "org.readium.kotlin-toolkit:readium-streamer", version.ref = "readium" }
+readium-tts = { group = "org.readium.kotlin-toolkit", name = "readium-navigator-media-tts", version.ref = "readium" }
 
 # Jsoup
 jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }

@@ -13,13 +13,24 @@
         android:layout_height="wrap_content"
         android:layout_gravity="top|center_horizontal"
         android:orientation="horizontal"
-        android:paddingVertical="16dp">
+        android:paddingVertical="16dp"
+        android:animateLayoutChanges="true">
+
+        <ImageButton
+            android:id="@+id/read_aloud_button"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/read_aloud"
+            android:src="@drawable/ic_read_aloud" />
 
         <!-- Bookmark Button -->
         <ImageButton
             android:id="@+id/bookmark_button"
             android:layout_width="48dp"
             android:layout_height="48dp"
+            android:layout_marginStart="4dp"
             android:layout_marginEnd="4dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/toggle_bookmark"
@@ -47,4 +58,46 @@
             android:src="@drawable/ic_settings" />
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/tts_controls_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:layout_marginBottom="60dp"
+        android:animateLayoutChanges="true"
+        android:visibility="gone">
+
+        <FrameLayout
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginHorizontal="16dp">
+
+            <ImageButton
+                android:id="@+id/tts_play_pause_button"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/pause_reading_aloud"
+                android:src="@drawable/ic_pause" />
+
+            <ProgressBar
+                android:id="@+id/tts_buffering_spinner"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center"
+                android:visibility="gone" />
+
+        </FrameLayout>
+
+        <ImageButton
+            android:id="@+id/tts_stop_button"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginHorizontal="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/stop_reading_aloud"
+            android:src="@drawable/ic_stop" />
+    </LinearLayout>
 </FrameLayout>

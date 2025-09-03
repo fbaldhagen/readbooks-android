@@ -18,9 +18,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.fbaldhagen.readbooks.R
 import com.fbaldhagen.readbooks.databinding.ActivityReaderHostBinding
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import androidx.core.view.ViewCompat
+import androidx.core.view.isVisible
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import org.readium.r2.navigator.preferences.Theme
@@ -39,18 +39,12 @@ class ReaderActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         handleWindowInsets()
-
-        binding.settingsButton.setOnClickListener {
-            showSettingsDialog()
-        }
-
-        binding.bookmarkButton.setOnClickListener {
-            viewModel.toggleBookmark()
-        }
-
-        binding.tocButton.setOnClickListener {
-            showTableOfContentsDialog()
-        }
+        binding.settingsButton.setOnClickListener { showSettingsDialog() }
+        binding.bookmarkButton.setOnClickListener { viewModel.toggleBookmark() }
+        binding.tocButton.setOnClickListener { showTableOfContentsDialog() }
+        binding.readAloudButton.setOnClickListener { viewModel.onTopBarTtsButtonClicked() }
+        binding.ttsPlayPauseButton.setOnClickListener { viewModel.onTtsPlayPauseClicked() }
+        binding.ttsStopButton.setOnClickListener { viewModel.onTtsStopClicked() }
 
         if (savedInstanceState == null) {
             supportFragmentManager.commit {
@@ -91,27 +85,58 @@ class ReaderActivity : AppCompatActivity() {
         }
     }
 
-
     private fun observeSystemUiVisibility() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.state.collectLatest { state ->
-                    updateSystemUi(state.isSystemUiVisible)
+                viewModel.state.collect { state ->
+                    updateSystemUi(state)
                 }
             }
         }
     }
 
-    private fun updateSystemUi(isVisible: Boolean) {
+    private fun updateSystemUi(state: ReaderState) {
         val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-        if (isVisible) {
+        if (state.isSystemUiVisible) {
             windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
         } else {
             windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
             windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
+        binding.readerActionsLayout.isVisible = state.isSystemUiVisible
 
-        binding.readerActionsLayout.visibility = if (isVisible) View.VISIBLE else View.GONE
+        val isTtsSessionActive = state.ttsPlaybackState != TtsPlaybackState.IDLE &&
+                state.ttsPlaybackState != TtsPlaybackState.FINISHED &&
+                state.ttsPlaybackState != TtsPlaybackState.ERROR
+
+        binding.ttsControlsLayout.isVisible = state.isSystemUiVisible && isTtsSessionActive
+
+        if (isTtsSessionActive) {
+            binding.readAloudButton.setImageResource(R.drawable.ic_placeholder_book)
+            binding.readAloudButton.contentDescription = getString(R.string.return_to_reading_mode)
+        } else {
+            binding.readAloudButton.setImageResource(R.drawable.ic_read_aloud)
+            binding.readAloudButton.contentDescription = getString(R.string.read_aloud)
+        }
+
+        when (state.ttsPlaybackState) {
+            TtsPlaybackState.BUFFERING -> {
+                binding.ttsPlayPauseButton.visibility = View.INVISIBLE
+                binding.ttsBufferingSpinner.visibility = View.VISIBLE
+            }
+            TtsPlaybackState.PLAYING -> {
+                binding.ttsPlayPauseButton.visibility = View.VISIBLE
+                binding.ttsBufferingSpinner.visibility = View.GONE
+                binding.ttsPlayPauseButton.setImageResource(R.drawable.ic_pause)
+                binding.ttsPlayPauseButton.contentDescription = getString(R.string.pause_reading_aloud)
+            }
+            TtsPlaybackState.PAUSED, TtsPlaybackState.IDLE, TtsPlaybackState.FINISHED, TtsPlaybackState.ERROR -> {
+                binding.ttsPlayPauseButton.visibility = View.VISIBLE
+                binding.ttsBufferingSpinner.visibility = View.GONE
+                binding.ttsPlayPauseButton.setImageResource(R.drawable.ic_play)
+                binding.ttsPlayPauseButton.contentDescription = getString(R.string.play_reading_aloud)
+            }
+        }
     }
 
     private fun observeTheme() {

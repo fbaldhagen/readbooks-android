@@ -1,5 +1,7 @@
 package com.fbaldhagen.readbooks.ui.reader
 
+import android.app.Application
+import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -15,13 +17,17 @@ import com.fbaldhagen.readbooks.domain.usecase.EndReadingSessionUseCase
 import com.fbaldhagen.readbooks.domain.usecase.GetBookmarksForBookUseCase
 import com.fbaldhagen.readbooks.domain.usecase.GetPublicationUseCase
 import com.fbaldhagen.readbooks.domain.usecase.StartReadingSessionUseCase
+import dagger.hilt.android.internal.Contexts.getApplication
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -41,6 +47,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ReaderViewModel @Inject constructor(
+    private val application: Application,
     private val savedStateHandle: SavedStateHandle,
     private val getPublicationUseCase: GetPublicationUseCase,
     private val bookRepository: BookRepository,
@@ -50,6 +57,7 @@ class ReaderViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val startReadingSessionUseCase: StartReadingSessionUseCase,
     private val endReadingSessionUseCase: EndReadingSessionUseCase,
+    private val ttsServiceConnectionManager: TtsServiceConnectionManager,
     @ApplicationScope private val applicationScope: CoroutineScope
 ) : ViewModel() {
 
@@ -68,6 +76,33 @@ class ReaderViewModel @Inject constructor(
         collectBookmarks(bookId)
         collectReaderSettings()
         updateBookmarkState()
+        observeTtsService()
+
+        ttsServiceConnectionManager.bind()
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observeTtsService() {
+        viewModelScope.launch {
+            ttsServiceConnectionManager.service
+                .flatMapLatest { service ->
+                    service?.state ?: flowOf(TtsService.TtsServiceState())
+                }
+                .collect { serviceState ->
+                    _state.update {
+                        it.copy(
+                            ttsPlaybackState = serviceState.playbackState,
+                            ttsError = serviceState.errorMessage
+                        )
+                    }
+                    val ttsLocator = serviceState.currentLocator ?: return@collect
+                    _events.emit(ReaderEvent.HighlightTtsUtterance(ttsLocator))
+
+                    if (ttsLocator.href != currentLocator?.href) {
+                        _events.emit(ReaderEvent.GoTo(ttsLocator, animated = true))
+                    }
+                }
+        }
     }
 
     private fun loadBook() {
@@ -260,7 +295,63 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
+    fun onTtsPlayPauseClicked() {
+        val currentPlaybackState = state.value.ttsPlaybackState
+        val service = ttsServiceConnectionManager.service.value
+
+        when {
+            service != null && currentPlaybackState == TtsPlaybackState.PLAYING -> {
+                service.pause()
+            }
+
+            service != null && currentPlaybackState == TtsPlaybackState.PAUSED -> {
+                service.play()
+            }
+
+            currentPlaybackState == TtsPlaybackState.IDLE -> {
+                val startLocator = currentLocator
+                if (startLocator == null) {
+                    viewModelScope.launch {
+                        _events.emit(ReaderEvent.ShowToast("Cannot determine starting position."))
+                    }
+                    return
+                }
+
+                _state.update { it.copy(ttsPlaybackState = TtsPlaybackState.BUFFERING) }
+
+                val intent = Intent(application, TtsService::class.java).apply {
+                    action = TtsService.ACTION_START
+                    putExtra(TtsService.EXTRA_BOOK_ID, bookId)
+                    putExtra(TtsService.EXTRA_LOCATOR_JSON, startLocator.toJSON().toString())
+                }
+                application.startService(intent)
+            }
+        }
+    }
+
+    fun onTopBarTtsButtonClicked() {
+        val currentPlaybackState = state.value.ttsPlaybackState
+
+        if (currentPlaybackState == TtsPlaybackState.IDLE) {
+            onTtsPlayPauseClicked()
+        } else {
+            onTtsStopClicked()
+        }
+    }
+
+    fun onTtsStopClicked() {
+        ttsServiceConnectionManager.service.value?.stop()
+
+        _state.update {
+            it.copy(
+                ttsPlaybackState = TtsPlaybackState.IDLE,
+                ttsError = null
+            )
+        }
+    }
+
     override fun onCleared() {
+        ttsServiceConnectionManager.unbind()
         applicationScope.launch {
             endReadingSessionUseCase(bookId)
         }
