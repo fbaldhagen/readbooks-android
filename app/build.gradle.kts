@@ -70,9 +70,15 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.media)
     implementation(libs.material)
+    implementation(libs.androidx.lifecycle.service)
+    implementation(libs.androidx.media3.session)
+    implementation(libs.androidx.media3.exoplayer)
     debugImplementation(libs.androidx.ui.tooling)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.material)
+
+    implementation(libs.androidx.media3.session)
+    implementation(libs.androidx.media3.ui)
 
     // Hilt for Dependency Injection
     implementation(libs.hilt.android)

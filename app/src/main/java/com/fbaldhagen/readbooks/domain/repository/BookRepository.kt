@@ -13,6 +13,7 @@ import org.readium.r2.shared.publication.Publication
 interface BookRepository {
 
     suspend fun openBook(filePath: String): Result<Publication>
+    suspend fun getBookFilePath(bookId: Long): String?
 
     fun getLibraryBooks(
         query: String,
@@ -22,6 +23,8 @@ interface BookRepository {
     ): Flow<List<LibraryBook>>
 
     suspend fun addBookToLibrary(filePath: String): Result<Long>
+
+    suspend fun deleteBook(bookId: Long)
 
     suspend fun seedLibraryFromAssets(): Result<Unit>
 
