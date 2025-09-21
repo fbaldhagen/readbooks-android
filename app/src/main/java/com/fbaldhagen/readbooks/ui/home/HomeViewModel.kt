@@ -25,18 +25,18 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
     private val homeContentFlow: Flow<HomeContent> = getHomeContentUseCase()
 
-    private val jumpBackInHeaders = listOf(
+    private val jumpBackInHeader = listOf(
         "Jump Back In",
         "Pick Up Where You Left Off",
         "From Your Recent Reads"
-    )
+    ).random()
 
-    private val discoverHeaders = listOf(
+    private val discoverHeader = listOf(
         "Discover Popular Books",
         "Trending Now",
         "What Everyone's Reading",
         "Find Your Next Obsession"
-    )
+    ).random()
 
     private fun getGreeting(): String {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
@@ -54,8 +54,8 @@ class HomeViewModel @Inject constructor(
             HomeState(
                 isLoading = false,
                 greeting = if (isCompletelyEmpty) "Explore Your Next Read" else getGreeting(),
-                jumpBackInHeader = jumpBackInHeaders.random(),
-                discoverHeader = discoverHeaders.random(),
+                jumpBackInHeader = jumpBackInHeader,
+                discoverHeader = discoverHeader,
                 currentlyReadingBook = homeContent.currentlyReading,
                 recentlyReadBooks = homeContent.recentBooks,
                 error = null
@@ -65,8 +65,8 @@ class HomeViewModel @Inject constructor(
             emit(
                 HomeState(
                     isLoading = false,
-                    jumpBackInHeader = jumpBackInHeaders.first(),
-                    discoverHeader = discoverHeaders.first(),
+                    jumpBackInHeader = jumpBackInHeader,
+                    discoverHeader = discoverHeader,
                     recentlyReadBooks = emptyList(),
                     error = "Sorry, we couldn't load your library. Please try again."
                 )
@@ -74,7 +74,7 @@ class HomeViewModel @Inject constructor(
         }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.Eagerly,
             initialValue = HomeState(isLoading = true)
         )
 

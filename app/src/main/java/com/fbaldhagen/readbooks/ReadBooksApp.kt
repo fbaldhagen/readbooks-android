@@ -3,9 +3,11 @@ package com.fbaldhagen.readbooks
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,6 +31,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -36,6 +40,8 @@ import androidx.navigation.compose.rememberNavController
 import com.fbaldhagen.readbooks.ui.common.TopBarBackground
 import com.fbaldhagen.readbooks.ui.common.TopBarState
 import com.fbaldhagen.readbooks.ui.components.SearchAppBar
+import com.fbaldhagen.readbooks.ui.main.MainViewModel
+import com.fbaldhagen.readbooks.ui.main.TtsMiniPlayer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,6 +55,9 @@ fun ReadBooksApp() {
     val shouldShowBottomBar = currentRoute in bottomBarScreens.map { it.route }
 
     var topBarState: TopBarState by remember { mutableStateOf(TopBarState.Standard()) }
+
+    val mainViewModel: MainViewModel = hiltViewModel()
+    val miniPlayerState by mainViewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(currentDestination) {
         when (currentRoute) {
@@ -153,23 +162,39 @@ fun ReadBooksApp() {
             }
         },
         bottomBar = {
-            if (shouldShowBottomBar) {
-                NavigationBar {
-                    bottomBarScreens.forEach { screen ->
-                        NavigationBarItem(
-                            selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
-                            onClick = {
-                                navController.navigate(screen.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
+            Column {
+                if (miniPlayerState.isVisible) {
+                    val miniPlayerModifier = if (shouldShowBottomBar) {
+                        Modifier
+                    } else {
+                        Modifier.navigationBarsPadding()
+                    }
+                    TtsMiniPlayer(
+                        uiState = miniPlayerState,
+                        onPlayPause = mainViewModel::onPlayPause,
+                        onClose = mainViewModel::onClose,
+                        modifier = miniPlayerModifier
+                    )
+                }
+
+                if (shouldShowBottomBar) {
+                    NavigationBar {
+                        bottomBarScreens.forEach { screen ->
+                            NavigationBarItem(
+                                selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                                onClick = {
+                                    navController.navigate(screen.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { Icon(imageVector = screen.icon!!, contentDescription = screen.label) },
-                            label = { Text(screen.label) }
-                        )
+                                },
+                                icon = { Icon(imageVector = screen.icon!!, contentDescription = screen.label) },
+                                label = { Text(screen.label) }
+                            )
+                        }
                     }
                 }
             }

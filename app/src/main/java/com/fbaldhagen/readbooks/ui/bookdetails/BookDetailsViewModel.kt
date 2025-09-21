@@ -1,18 +1,23 @@
 package com.fbaldhagen.readbooks.ui.bookdetails
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.util.UnstableApi
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.fbaldhagen.readbooks.Screen
 import com.fbaldhagen.readbooks.data.worker.DownloadWorker
+import com.fbaldhagen.readbooks.domain.controller.TtsController
 import com.fbaldhagen.readbooks.domain.model.BookDetails
 import com.fbaldhagen.readbooks.domain.model.LibraryBook
 import com.fbaldhagen.readbooks.domain.model.ReadingStatus
+import com.fbaldhagen.readbooks.domain.usecase.DeleteBookUseCase
 import com.fbaldhagen.readbooks.domain.usecase.DownloadBookUseCase
 import com.fbaldhagen.readbooks.domain.usecase.GetBookDetailsUseCase
 import com.fbaldhagen.readbooks.domain.usecase.GetOtherBooksByAuthorUseCase
+import com.fbaldhagen.readbooks.domain.usecase.GetPublicationUseCase
 import com.fbaldhagen.readbooks.domain.usecase.ResetReadingProgressUseCase
 import com.fbaldhagen.readbooks.domain.usecase.UpdateBookRatingUseCase
 import com.fbaldhagen.readbooks.domain.usecase.UpdateReadingStatusUseCase
@@ -30,20 +35,31 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.json.JSONObject
+import org.readium.r2.shared.publication.Locator
+import org.readium.r2.shared.util.mediatype.MediaType
 import java.util.UUID
 import javax.inject.Inject
 
+@androidx.annotation.OptIn(UnstableApi::class)
 @HiltViewModel
-class BookDetailsViewModel @Inject constructor(
+class BookDetailsViewModel @androidx.annotation.OptIn(UnstableApi::class)
+@Inject constructor(
     private val updateBookRatingUseCase: UpdateBookRatingUseCase,
     private val getOtherBooksByAuthorUseCase: GetOtherBooksByAuthorUseCase,
     private val updateReadingStatusUseCase: UpdateReadingStatusUseCase,
     private val resetReadingProgressUseCase: ResetReadingProgressUseCase,
     private val getBookDetailsUseCase: GetBookDetailsUseCase,
     private val downloadBookUseCase: DownloadBookUseCase,
+    private val deleteBookUseCase: DeleteBookUseCase,
     private val workManager: WorkManager,
-    private val savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle,
+    private val getPublicationUseCase: GetPublicationUseCase,
+    private val ttsController: TtsController
 ) : ViewModel() {
+    init {
+        Log.d("TTS_DEBUG", "BookDetailsViewModel created, observing TtsController: ${ttsController.hashCode()}")
+    }
 
     private val localIdFlow: StateFlow<Long> = savedStateHandle.getStateFlow(Screen.LOCAL_ID_ARG, 0L)
     private val remoteIdFlow: StateFlow<String?> = savedStateHandle.getStateFlow(Screen.REMOTE_ID_ARG, null)
@@ -133,9 +149,62 @@ class BookDetailsViewModel @Inject constructor(
         }
     }
 
+
+    fun onListenClicked() {
+        viewModelScope.launch {
+            val book = state.value.book ?: return@launch
+            val localId = book.localId ?: return@launch
+            val filePath = book.epubUrl ?: return@launch
+
+            getPublicationUseCase(filePath).fold(
+                onSuccess = { publication ->
+                    val lastReadLocatorJson = book.lastReadLocator
+
+                    val initialLocator: Locator? = if (!lastReadLocatorJson.isNullOrBlank()) {
+                        try {
+                            val thinLocator = Locator.fromJSON(JSONObject(lastReadLocatorJson)) ?: return@launch
+
+                            val link = publication.linkWithHref(thinLocator.href)
+                            if (link != null) {
+                                Locator(
+                                    href = link.href.resolve(),
+                                    mediaType = link.mediaType ?: MediaType.XHTML,
+                                    title = link.title,
+                                    locations = thinLocator.locations,
+                                    text = thinLocator.text
+                                )
+                            } else {
+                                Log.w("BookDetailsViewModel", "Could not find link for href: ${thinLocator.href}")
+                                null
+                            }
+                        } catch (e: Exception) {
+                            Log.e("BookDetailsViewModel", "Failed to parse or resolve locator JSON", e)
+                            null
+                        }
+                    } else {
+                        null
+                    }
+
+                    ttsController.play(bookId = localId, initialLocator = initialLocator)
+                },
+                onFailure = { error ->
+                    Log.e("BookDetailsViewModel", "Failed to get publication for TTS", error)
+                }
+            )
+        }
+    }
+
     fun deleteBook() {
         val localId = state.value.book?.localId ?: return
-        // TODO:
+
+        viewModelScope.launch {
+            try {
+                deleteBookUseCase(localId)
+                _events.emit(BookDetailsEvent.NavigateBack)
+            } catch (e: Exception) {
+                Log.e("YourBookViewModel", "Error deleting book", e)
+            }
+        }
     }
 
     fun onDownloadClicked() {

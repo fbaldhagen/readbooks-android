@@ -13,8 +13,8 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.work.WorkManager
 import com.fbaldhagen.readbooks.R
-import com.fbaldhagen.readbooks.ui.notifications.NotificationConstants.DOWNLOAD_CHANNEL_ID
-import com.fbaldhagen.readbooks.ui.notifications.NotificationConstants.DOWNLOAD_CHANNEL_NAME
+import com.fbaldhagen.readbooks.utils.NotificationConstants.DOWNLOAD_CHANNEL_ID
+import com.fbaldhagen.readbooks.utils.NotificationConstants.DOWNLOAD_CHANNEL_NAME
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.UUID
 import javax.inject.Inject

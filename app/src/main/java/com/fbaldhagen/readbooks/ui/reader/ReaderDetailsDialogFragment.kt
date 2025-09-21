@@ -13,11 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.viewModels
+import androidx.media3.common.util.UnstableApi
 import com.fbaldhagen.readbooks.ui.settings.SettingsViewModel
 import com.fbaldhagen.readbooks.ui.theme.ReadBooksTheme
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import dagger.hilt.android.AndroidEntryPoint
 
+@UnstableApi
 @AndroidEntryPoint
 class ReaderDetailsDialogFragment : BottomSheetDialogFragment() {
 

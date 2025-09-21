@@ -15,7 +15,7 @@ class LocatorParser @Inject constructor() {
         if (locatorJson.isNullOrBlank()) return null
 
         return try {
-            val locator = json.decodeFromString<Locator>(locatorJson)
+            val locator = json.decodeFromString<ProgressionLocator>(locatorJson)
             locator.locations.totalProgression?.toFloat()
         } catch (e: Exception) {
             null
@@ -24,13 +24,13 @@ class LocatorParser @Inject constructor() {
 }
 
 @Serializable
-data class Locator(
+data class ProgressionLocator(
     @SerialName("locations")
-    val locations: Locations
+    val locations: ProgressionLocations
 )
 
 @Serializable
-data class Locations(
+data class ProgressionLocations(
     @SerialName("totalProgression")
     val totalProgression: Double? = null
 )

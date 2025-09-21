@@ -1,6 +1,7 @@
 package com.fbaldhagen.readbooks.ui.reader
 
 import com.fbaldhagen.readbooks.domain.model.Bookmark
+import com.fbaldhagen.readbooks.domain.model.TtsPlaybackState
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.epub.EpubPreferences
@@ -30,13 +31,5 @@ sealed interface ReaderEvent {
     data class ShowToast(val message: String) : ReaderEvent
     data class GoTo(val locator: Locator, val animated: Boolean = true) : ReaderEvent
     data class HighlightTtsUtterance(val locator: Locator) : ReaderEvent
-}
-
-enum class TtsPlaybackState {
-    IDLE,
-    BUFFERING,
-    PLAYING,
-    PAUSED,
-    FINISHED,
-    ERROR
+    data object RequestTtsPermission : ReaderEvent
 }

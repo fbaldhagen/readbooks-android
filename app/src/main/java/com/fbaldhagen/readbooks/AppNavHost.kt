@@ -42,6 +42,24 @@ fun AppNavHost(
                 },
                 onDiscoverBookClick = { remoteId ->
                     navController.navigate(Screen.BookDetails.createRouteForRemote(remoteId))
+                },
+                onSeeAllClick = {
+                    navController.navigate(Screen.Library.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onDiscoverMoreClicked = {
+                    navController.navigate(Screen.Discover.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
                 }
             )
         }

@@ -25,6 +25,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -57,6 +58,8 @@ import com.fbaldhagen.readbooks.utils.mapThrowableToUserMessage
 fun HomeScreen(
     onBookClick: (bookId: Long) -> Unit,
     onDiscoverBookClick: (remoteId: String) -> Unit,
+    onSeeAllClick: () -> Unit,
+    onDiscoverMoreClicked: () -> Unit,
     onConfigureTopBar: (TopBarState) -> Unit,
     contentPadding: PaddingValues,
     viewModel: HomeViewModel = hiltViewModel()
@@ -82,6 +85,8 @@ fun HomeScreen(
             onBookClick = onBookClick,
             discoverBooks = discoverBooks,
             onDiscoverBookClick = onDiscoverBookClick,
+            onSeeAllClick = onSeeAllClick,
+            onDiscoverMoreClicked = onDiscoverMoreClicked,
             contentPadding = contentPadding
         )
     }
@@ -93,6 +98,8 @@ fun HomeContent(
     onBookClick: (bookId: Long) -> Unit,
     discoverBooks: LazyPagingItems<DiscoverBook>,
     onDiscoverBookClick: (remoteId: String) -> Unit,
+    onSeeAllClick: () -> Unit,
+    onDiscoverMoreClicked: () -> Unit,
     contentPadding: PaddingValues
 ) {
     val isLocalContentLoading = state.recentlyReadBooks == null
@@ -148,7 +155,8 @@ fun HomeContent(
                     BookCarousel(
                         title = state.jumpBackInHeader,
                         books = books,
-                        onBookClick = onBookClick
+                        onBookClick = onBookClick,
+                        onSeeAllClick = onSeeAllClick
                     )
                 }
             }
@@ -174,7 +182,8 @@ fun HomeContent(
             DiscoverCarousel(
                 title = state.discoverHeader,
                 books = discoverBooks,
-                onBookClick = onDiscoverBookClick
+                onBookClick = onDiscoverBookClick,
+                onDiscoverMoreClicked = onDiscoverMoreClicked
             )
         }
     }
@@ -184,15 +193,26 @@ fun HomeContent(
 private fun BookCarousel(
     title: String,
     books: List<LibraryBook>,
-    onBookClick: (Long) -> Unit
+    onBookClick: (Long) -> Unit,
+    onSeeAllClick: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            TextButton(onClick = onSeeAllClick) {
+                Text("See All")
+            }
+        }
         LazyRow(
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -219,7 +239,7 @@ fun CurrentlyReadingHeroCard(
             .fillMaxWidth()
             .height(180.dp)
             .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Row(
             modifier = Modifier
@@ -286,7 +306,8 @@ fun CurrentlyReadingHeroCard(
 fun DiscoverCarousel(
     title: String,
     books: LazyPagingItems<DiscoverBook>,
-    onBookClick: (remoteId: String) -> Unit
+    onBookClick: (remoteId: String) -> Unit,
+    onDiscoverMoreClicked: () -> Unit
 ) {
     val loadState = books.loadState.refresh
 
@@ -297,12 +318,23 @@ fun DiscoverCarousel(
         is LoadState.Error -> {
             val errorState = books.loadState.refresh as LoadState.Error
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    TextButton(onClick = onDiscoverMoreClicked) {
+                        Text("See more")
+                    }
+                }
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -318,12 +350,22 @@ fun DiscoverCarousel(
         }
         else -> {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    TextButton(onClick = onDiscoverMoreClicked) {
+                        Text("See more")
+                    }
+                }
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)

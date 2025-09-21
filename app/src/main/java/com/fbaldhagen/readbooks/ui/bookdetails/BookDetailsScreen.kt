@@ -1,25 +1,70 @@
 package com.fbaldhagen.readbooks.ui.bookdetails
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarOutline
-import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -27,11 +72,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.fbaldhagen.readbooks.domain.model.BookDetails
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import com.fbaldhagen.readbooks.domain.model.LibraryBook
 import com.fbaldhagen.readbooks.domain.model.ReadingStatus
 import com.fbaldhagen.readbooks.ui.common.TopBarState
@@ -161,6 +201,7 @@ fun BookDetailsScreen(
                     downloadState = state.downloadState,
                     moreByAuthor = state.moreByAuthor,
                     onReadClick = { onReadClick(book.localId!!) },
+                    onListenClick = viewModel::onListenClicked,
                     onDownloadClick = viewModel::onDownloadClicked,
                     onBookClick = onBookClick,
                     onRatingChanged = viewModel::onRatingChanged,
@@ -282,15 +323,22 @@ private fun BookDetailsContent(
     downloadState: DownloadState,
     moreByAuthor: List<LibraryBook>,
     onReadClick: () -> Unit,
+    onListenClick: () -> Unit,
     onDownloadClick: () -> Unit,
     onBookClick: (Long) -> Unit,
     onRatingChanged: (Int) -> Unit,
     onCancelClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val navBarPadding = WindowInsets.navigationBars.asPaddingValues()
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = 16.dp,
+            bottom = 16.dp + navBarPadding.calculateBottomPadding()
+        ),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -346,6 +394,7 @@ private fun BookDetailsContent(
                 downloadState = downloadState,
                 book = book,
                 onReadClick = onReadClick,
+                onListenClick = onListenClick,
                 onDownloadClick = onDownloadClick,
                 onCancelClick = onCancelClick
             )
@@ -408,70 +457,95 @@ private fun ActionButton(
     downloadState: DownloadState,
     book: BookDetails,
     onReadClick: () -> Unit,
+    onListenClick: () -> Unit,
     onDownloadClick: () -> Unit,
     onCancelClick: () -> Unit
 ) {
-    val buttonModifier = Modifier.fillMaxWidth()
+    val buttonState = remember(isLocalBook, downloadState) {
+        if (!isLocalBook) downloadState::class else book.readingStatus::class
+    }
 
-    if (isLocalBook) {
-        val buttonText = when (book.readingStatus) {
-            ReadingStatus.FINISHED -> "Read Again"
-            ReadingStatus.IN_PROGRESS -> {
-                val progress = book.readingProgress
-                if (progress != null && progress > 0f) {
-                    "Continue Reading (${(progress * 100).toInt()}%)"
-                } else {
-                    "Continue Reading"
-                }
-            }
-            ReadingStatus.NOT_STARTED -> "Read"
+    AnimatedContent(
+        targetState = buttonState,
+        label = "ActionButtonAnimation",
+        transitionSpec = {
+            fadeIn(animationSpec = tween(220, delayMillis = 90))
+                .togetherWith(fadeOut(animationSpec = tween(90)))
         }
-        Button(onClick = onReadClick, modifier = buttonModifier) {
-            Text(text = buttonText)
-        }
-    } else {
-        when (downloadState) {
-            is DownloadState.NotDownloaded -> {
-                Button(onClick = onDownloadClick, modifier = buttonModifier) {
+    ) { state ->
+        when (state) {
+            DownloadState.NotDownloaded::class -> {
+                Button(onClick = onDownloadClick, modifier = Modifier.fillMaxWidth()) {
                     Text("Add to Library")
                 }
             }
-            is DownloadState.InProgress -> {
-                Row(
-                    modifier = buttonModifier,
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+
+            DownloadState.InProgress::class -> {
+                val progress = (downloadState as? DownloadState.InProgress)?.progress ?: 0f
+                OutlinedButton(
+                    onClick = onCancelClick,
+                    modifier = Modifier.fillMaxWidth().height(ButtonDefaults.MinHeight),
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.5.dp
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
+                        Box(modifier = Modifier
+                            .matchParentSize()
+                            .background(
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                shape = ButtonDefaults.outlinedShape
+                            )
+                            .fillMaxWidth(progress)
                         )
-                        Text(
-                            text = "Downloading... ${(downloadState.progress * 100).toInt()}%",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-                    TextButton(onClick = onCancelClick) {
-                        Text("Cancel")
+                        Text(text = "Downloading... ${(progress * 100).toInt()}%")
                     }
                 }
             }
-            is DownloadState.Failed -> {
+
+            DownloadState.Failed::class -> {
                 Button(
                     onClick = onDownloadClick,
-                    modifier = buttonModifier,
+                    modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Download Failed. Retry?")
                 }
             }
-            is DownloadState.Completed -> {
-                Button(onClick = {}, enabled = false, modifier = buttonModifier) {
-                    Text("Read")
+
+            else -> {
+                val buttonText = when (book.readingStatus) {
+                    ReadingStatus.FINISHED -> "Read Again"
+                    ReadingStatus.IN_PROGRESS -> {
+                        val progress = book.readingProgress
+                        if (progress != null && progress > 0f) {
+                            "Continue Reading (${(progress * 100).toInt()}%)"
+                        } else {
+                            "Continue Reading"
+                        }
+                    }
+                    ReadingStatus.NOT_STARTED -> "Read"
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = onReadClick,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(text = buttonText)
+                    }
+
+                    OutlinedButton(
+                        onClick = onListenClick,
+                        modifier = Modifier.size(56.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                            contentDescription = "Listen to this book"
+                        )
+                    }
                 }
             }
         }

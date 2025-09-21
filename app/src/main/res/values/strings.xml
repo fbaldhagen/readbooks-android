@@ -10,4 +10,10 @@
     <string name="stop_reading_aloud">Stop reading aloud</string>
     <string name="play_reading_aloud">Start reading aloud</string>
     <string name="return_to_reading_mode">Return to reading mode</string>
+    <string name="tts_error">Tts error</string>
+    <string name="buffering">buffering</string>
+    <string name="notification_channel_read_aloud">Read Aloud</string>
+    <string name="notification_channel_read_aloud_description">Displays playback controls while a book is being read aloud.</string>
+    <string name="book_title">Book title</string>
+    <string name="play_pause">Play/Pause</string>
 </resources>

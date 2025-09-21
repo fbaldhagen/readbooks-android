@@ -3,34 +3,39 @@ package com.fbaldhagen.readbooks.ui.reader
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
 import android.view.ViewGroup
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.commit
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.media3.common.util.UnstableApi
 import com.fbaldhagen.readbooks.R
 import com.fbaldhagen.readbooks.databinding.ActivityReaderHostBinding
+import com.fbaldhagen.readbooks.domain.model.TtsPlaybackState
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
-import androidx.core.view.ViewCompat
-import androidx.core.view.isVisible
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import org.readium.r2.navigator.preferences.Theme
+import org.readium.r2.shared.ExperimentalReadiumApi
+import org.readium.r2.shared.publication.Locator
 
+@UnstableApi
 @AndroidEntryPoint
 class ReaderActivity : AppCompatActivity() {
 
     private val viewModel: ReaderViewModel by viewModels()
     private lateinit var binding: ActivityReaderHostBinding
 
+    @androidx.annotation.OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -42,9 +47,9 @@ class ReaderActivity : AppCompatActivity() {
         binding.settingsButton.setOnClickListener { showSettingsDialog() }
         binding.bookmarkButton.setOnClickListener { viewModel.toggleBookmark() }
         binding.tocButton.setOnClickListener { showTableOfContentsDialog() }
-        binding.readAloudButton.setOnClickListener { viewModel.onTopBarTtsButtonClicked() }
-        binding.ttsPlayPauseButton.setOnClickListener { viewModel.onTtsPlayPauseClicked() }
-        binding.ttsStopButton.setOnClickListener { viewModel.onTtsStopClicked() }
+        binding.readAloudButton.setOnClickListener {
+            viewModel.onTtsPlayPauseClicked()
+        }
 
         if (savedInstanceState == null) {
             supportFragmentManager.commit {
@@ -54,6 +59,17 @@ class ReaderActivity : AppCompatActivity() {
         observeSystemUiVisibility()
         observeTheme()
         observeBookmarkState()
+        observeTtsPermissionRequest()
+    }
+
+    private fun observeTtsPermissionRequest() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.events.collect {
+
+                }
+            }
+        }
     }
 
     private fun showSettingsDialog() {
@@ -76,11 +92,9 @@ class ReaderActivity : AppCompatActivity() {
     private fun handleWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.readerActionsLayout) { view, insets ->
             val systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-
             val params = view.layoutParams as ViewGroup.MarginLayoutParams
             params.topMargin = systemBarInsets.top + (8 * resources.displayMetrics.density).toInt()
             view.layoutParams = params
-
             insets
         }
     }
@@ -97,44 +111,32 @@ class ReaderActivity : AppCompatActivity() {
 
     private fun updateSystemUi(state: ReaderState) {
         val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+
         if (state.isSystemUiVisible) {
             windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
         } else {
             windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
             windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
+
         binding.readerActionsLayout.isVisible = state.isSystemUiVisible
-
-        val isTtsSessionActive = state.ttsPlaybackState != TtsPlaybackState.IDLE &&
-                state.ttsPlaybackState != TtsPlaybackState.FINISHED &&
-                state.ttsPlaybackState != TtsPlaybackState.ERROR
-
-        binding.ttsControlsLayout.isVisible = state.isSystemUiVisible && isTtsSessionActive
-
-        if (isTtsSessionActive) {
-            binding.readAloudButton.setImageResource(R.drawable.ic_placeholder_book)
-            binding.readAloudButton.contentDescription = getString(R.string.return_to_reading_mode)
-        } else {
-            binding.readAloudButton.setImageResource(R.drawable.ic_read_aloud)
-            binding.readAloudButton.contentDescription = getString(R.string.read_aloud)
-        }
 
         when (state.ttsPlaybackState) {
             TtsPlaybackState.BUFFERING -> {
-                binding.ttsPlayPauseButton.visibility = View.INVISIBLE
-                binding.ttsBufferingSpinner.visibility = View.VISIBLE
+                binding.readAloudButton.setImageResource(R.drawable.ic_hourglass)
+                binding.readAloudButton.contentDescription = getString(R.string.buffering)
             }
             TtsPlaybackState.PLAYING -> {
-                binding.ttsPlayPauseButton.visibility = View.VISIBLE
-                binding.ttsBufferingSpinner.visibility = View.GONE
-                binding.ttsPlayPauseButton.setImageResource(R.drawable.ic_pause)
-                binding.ttsPlayPauseButton.contentDescription = getString(R.string.pause_reading_aloud)
+                binding.readAloudButton.setImageResource(R.drawable.ic_pause)
+                binding.readAloudButton.contentDescription = getString(R.string.pause_reading_aloud)
             }
-            TtsPlaybackState.PAUSED, TtsPlaybackState.IDLE, TtsPlaybackState.FINISHED, TtsPlaybackState.ERROR -> {
-                binding.ttsPlayPauseButton.visibility = View.VISIBLE
-                binding.ttsBufferingSpinner.visibility = View.GONE
-                binding.ttsPlayPauseButton.setImageResource(R.drawable.ic_play)
-                binding.ttsPlayPauseButton.contentDescription = getString(R.string.play_reading_aloud)
+            TtsPlaybackState.PAUSED, TtsPlaybackState.IDLE, TtsPlaybackState.FINISHED -> {
+                binding.readAloudButton.setImageResource(R.drawable.ic_read_aloud)
+                binding.readAloudButton.contentDescription = getString(R.string.read_aloud)
+            }
+            TtsPlaybackState.ERROR -> {
+                binding.readAloudButton.setImageResource(R.drawable.ic_error)
+                binding.readAloudButton.contentDescription = getString(R.string.tts_error)
             }
         }
     }
@@ -170,8 +172,15 @@ class ReaderActivity : AppCompatActivity() {
         }
     }
 
+    @OptIn(ExperimentalReadiumApi::class)
+    private suspend fun getCurrentLocator(): Locator? {
+        val readerFragment = supportFragmentManager.findFragmentById(R.id.fragment_host_container) as? ReaderFragment
+        val visualNavigator = readerFragment?.navigator as? org.readium.r2.navigator.VisualNavigator
+        return visualNavigator?.firstVisibleElementLocator()
+    }
+
     companion object {
-        private const val EXTRA_BOOK_ID = "bookId"
+        const val EXTRA_BOOK_ID = "bookId"
         const val EXTRA_HREF = "href"
 
         fun createIntent(context: Context, bookId: Long, href: String? = null): Intent =

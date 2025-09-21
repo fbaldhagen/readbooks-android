@@ -12,8 +12,10 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.media3.common.util.UnstableApi
 import com.fbaldhagen.readbooks.R
 import com.fbaldhagen.readbooks.databinding.FragmentReaderBinding
+import com.fbaldhagen.readbooks.domain.model.TtsPlaybackState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -28,6 +30,7 @@ import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.util.AbsoluteUrl
 
+@UnstableApi
 @OptIn(ExperimentalReadiumApi::class)
 @AndroidEntryPoint
 class ReaderFragment : Fragment(R.layout.fragment_reader) {
@@ -37,7 +40,7 @@ class ReaderFragment : Fragment(R.layout.fragment_reader) {
 
     private val viewModel: ReaderViewModel by viewModels({ requireActivity() })
 
-    private val navigator: EpubNavigatorFragment?
+    val navigator: EpubNavigatorFragment?
         get() = childFragmentManager.findFragmentByTag(NAVIGATOR_TAG) as? EpubNavigatorFragment
 
     private val ttsGroup = "tts-highlight-group"
@@ -110,6 +113,8 @@ class ReaderFragment : Fragment(R.layout.fragment_reader) {
                         is ReaderEvent.HighlightTtsUtterance -> {
                             highlightUtterance(event.locator)
                         }
+
+                        is ReaderEvent.RequestTtsPermission -> { /* No-op */ }
                     }
                 }
             }
