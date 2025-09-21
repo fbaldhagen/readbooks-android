@@ -2,12 +2,13 @@ package com.fbaldhagen.readbooks.data.repository
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.util.Log
 import com.fbaldhagen.readbooks.data.datasource.local.db.BookDao
 import com.fbaldhagen.readbooks.data.datasource.local.file.EpubDataSource
 import com.fbaldhagen.readbooks.data.mapper.toBookDetails
 import com.fbaldhagen.readbooks.data.mapper.toEntity
-import com.fbaldhagen.readbooks.data.model.BookEntity
 import com.fbaldhagen.readbooks.data.mapper.toLibraryBook
+import com.fbaldhagen.readbooks.data.model.BookEntity
 import com.fbaldhagen.readbooks.data.parser.LocatorParser
 import com.fbaldhagen.readbooks.domain.model.Book
 import com.fbaldhagen.readbooks.domain.model.BookDetails
@@ -70,6 +71,10 @@ class BookRepositoryImpl @Inject constructor(
 
     override suspend fun openBook(filePath: String): Result<Publication> {
         return epubDataSource.openEpub(filePath)
+    }
+
+    override suspend fun getBookFilePath(bookId: Long): String? {
+        return bookDao.getBookFilePath(bookId)
     }
 
     override suspend fun addBookToLibrary(filePath: String): Result<Long> = withContext(Dispatchers.IO) {
@@ -378,5 +383,22 @@ class BookRepositoryImpl @Inject constructor(
                 bookDao.setArchiveStatus(bookId, newArchiveStatus)
             }
         }
+    }
+
+    override suspend fun deleteBook(bookId: Long) {
+        val filePath = bookDao.getBookFilePath(bookId)
+
+        if (!filePath.isNullOrBlank()) {
+            try {
+                val bookFile = File(filePath)
+                if (bookFile.exists()) {
+                    bookFile.delete()
+                }
+            } catch (e: Exception) {
+                Log.e("BookRepository", "Failed to delete book file: $filePath", e)
+            }
+        }
+
+        bookDao.deleteBookById(bookId)
     }
 }

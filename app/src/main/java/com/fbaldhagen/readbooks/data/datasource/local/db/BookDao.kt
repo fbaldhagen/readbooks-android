@@ -19,6 +19,9 @@ interface BookDao {
     @Query("SELECT * FROM books WHERE id = :bookId")
     suspend fun getBookById(bookId: Long): BookEntity?
 
+    @Query("SELECT filePath FROM books WHERE id = :bookId")
+    suspend fun getBookFilePath(bookId: Long): String?
+
     @Query("UPDATE books SET lastOpenedTimestamp = :timestamp WHERE id = :bookId")
     suspend fun updateLastOpenedTimestamp(bookId: Long, timestamp: Long)
 
@@ -103,4 +106,7 @@ interface BookDao {
         statuses: Set<String>?,
         isArchived: Boolean
     ): Flow<List<BookEntity>>
+
+    @Query("DELETE FROM books WHERE id = :bookId")
+    suspend fun deleteBookById(bookId: Long)
 }

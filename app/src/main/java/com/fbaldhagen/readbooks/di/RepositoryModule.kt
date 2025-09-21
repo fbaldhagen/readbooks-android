@@ -1,9 +1,12 @@
 package com.fbaldhagen.readbooks.di
 
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
 import com.fbaldhagen.readbooks.data.datasource.local.file.EpubDataSource
 import com.fbaldhagen.readbooks.data.datasource.local.file.FileDataSource
 import com.fbaldhagen.readbooks.data.datasource.local.file.FileDataSourceImpl
 import com.fbaldhagen.readbooks.data.datasource.local.file.ReadiumEpubDataSource
+import com.fbaldhagen.readbooks.data.manager.TtsManagerImpl
 import com.fbaldhagen.readbooks.data.parser.ReadiumMetadataParser
 import com.fbaldhagen.readbooks.data.repository.AchievementRepositoryImpl
 import com.fbaldhagen.readbooks.data.repository.BookRepositoryImpl
@@ -12,6 +15,7 @@ import com.fbaldhagen.readbooks.data.repository.CollectionRepositoryImpl
 import com.fbaldhagen.readbooks.data.repository.DiscoverRepositoryImpl
 import com.fbaldhagen.readbooks.data.repository.SessionRepositoryImpl
 import com.fbaldhagen.readbooks.data.repository.UserPreferencesRepositoryImpl
+import com.fbaldhagen.readbooks.domain.manager.TtsManager
 import com.fbaldhagen.readbooks.domain.parser.EpubMetadataParser
 import com.fbaldhagen.readbooks.domain.repository.AchievementRepository
 import com.fbaldhagen.readbooks.domain.repository.BookRepository
@@ -89,4 +93,11 @@ abstract class RepositoryModule {
     abstract fun bindFileDataSource(
         fileDataSourceImpl: FileDataSourceImpl
     ): FileDataSource
+
+    @OptIn(UnstableApi::class)
+    @Binds
+    @Singleton
+    abstract fun bindTtsManager(
+        ttsManagerImpl: TtsManagerImpl
+    ): TtsManager
 }
