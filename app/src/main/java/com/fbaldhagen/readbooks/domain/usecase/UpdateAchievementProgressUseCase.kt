@@ -32,7 +32,6 @@ class UpdateAchievementProgressUseCase @Inject constructor(
 
         while (true) {
             val nextTierToUnlock = definition.tiers.getOrNull(newUnlockedTier) ?: break
-
             if (newProgressValue >= nextTierToUnlock.threshold) {
                 newUnlockedTier++
             } else {
@@ -40,9 +39,16 @@ class UpdateAchievementProgressUseCase @Inject constructor(
             }
         }
 
+        var newUnlockedDate = currentProgress.unlockedDate
+
+        if (newUnlockedTier > currentProgress.unlockedTier && currentProgress.unlockedDate == null) {
+            newUnlockedDate = java.time.LocalDate.now()
+        }
+
         val finalProgress = currentProgress.copy(
             currentProgress = newProgressValue,
-            unlockedTier = newUnlockedTier
+            unlockedTier = newUnlockedTier,
+            unlockedDate = newUnlockedDate
         )
         achievementRepository.updateUserAchievement(finalProgress)
     }

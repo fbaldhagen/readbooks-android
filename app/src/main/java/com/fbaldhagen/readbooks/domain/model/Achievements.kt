@@ -15,6 +15,7 @@ enum class AchievementId {
 }
 
 data class AchievementTier(
+    val name: String,
     val threshold: Int,
     val rewardPoints: Int = 0
 )
@@ -31,5 +32,6 @@ data class UserAchievement(
     val achievementId: AchievementId,
     val currentProgress: Int,
     val unlockedTier: Int,
+    val unlockedDate: java.time.LocalDate? = null,
     val lastProgressTimestamp: Long? = null
 )

@@ -16,6 +16,7 @@ import com.fbaldhagen.readbooks.ui.discover.DiscoverScreen
 import com.fbaldhagen.readbooks.ui.home.HomeScreen
 import com.fbaldhagen.readbooks.ui.library.LibraryScreen
 import com.fbaldhagen.readbooks.ui.profile.ProfileScreen
+import com.fbaldhagen.readbooks.ui.progress.ProgressScreen
 import com.fbaldhagen.readbooks.ui.reader.ReaderActivity
 import com.fbaldhagen.readbooks.ui.toc.TableOfContentsScreen
 
@@ -99,12 +100,22 @@ fun AppNavHost(
                 contentPadding = contentPadding,
                 onNavigateToDebug = {
                     navController.navigate(Screen.Debug.route)
+                },
+                onNavigateToProgress = {
+                    navController.navigate(Screen.Progress.route)
                 }
             )
         }
 
         composable(route = Screen.Debug.route) {
             DebugScreen(contentPadding = contentPadding)
+        }
+
+        composable(route = Screen.Progress.route) {
+            ProgressScreen(
+                onConfigureTopBar = onConfigureTopBar,
+                contentPadding = contentPadding
+            )
         }
 
         composable(

@@ -1,76 +1,52 @@
 package com.fbaldhagen.readbooks.ui.profile
 
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.MilitaryTech
-import androidx.compose.material.icons.filled.WorkspacePremium
-import androidx.compose.material.icons.outlined.LocalFireDepartment
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ColorMatrix
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.fbaldhagen.readbooks.domain.model.AchievementDetails
-import com.fbaldhagen.readbooks.domain.model.ReadingGoalProgress
-import com.fbaldhagen.readbooks.domain.model.ReadingStreakInfo
-import com.fbaldhagen.readbooks.domain.model.StreakStatus
+import coil.compose.AsyncImage
+import com.fbaldhagen.readbooks.R
 import com.fbaldhagen.readbooks.ui.common.TopBarBackground
 import com.fbaldhagen.readbooks.ui.common.TopBarState
-import com.fbaldhagen.readbooks.ui.components.TieredBadgeIcon
-import com.fbaldhagen.readbooks.ui.theme.BadgeColors
 
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     contentPadding: PaddingValues,
     onConfigureTopBar: (TopBarState) -> Unit,
-    onNavigateToDebug: () -> Unit
+    onNavigateToDebug: () -> Unit,
+    onNavigateToProgress: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -89,10 +65,8 @@ fun ProfileScreen(
     ) {
         ProfileContent(
             state = state,
-            onGoalClicked = viewModel::onGoalClicked,
-            onDismissGoalDialog = viewModel::onDismissGoalDialog,
-            onSaveGoal = viewModel::onSaveGoal,
             onNavigateToDebug = onNavigateToDebug,
+            onNavigateToProgress = onNavigateToProgress,
             contentPadding = contentPadding
         )
     }
@@ -101,476 +75,113 @@ fun ProfileScreen(
 @Composable
 fun ProfileContent(
     state: ProfileState,
-    onGoalClicked: () -> Unit,
-    onDismissGoalDialog: () -> Unit,
-    onSaveGoal: (Int) -> Unit,
+    onNavigateToProgress: () -> Unit,
     onNavigateToDebug: () -> Unit,
     contentPadding: PaddingValues
 ) {
-    val currentYear = java.time.LocalDate.now().year
     var clickCount by remember { mutableIntStateOf(0) }
-
-    if (state.isGoalDialogVisible) {
-        SetGoalDialog(
-            currentGoal = state.readingGoalProgress.goal,
-            onDismiss = onDismissGoalDialog,
-            onSave = onSaveGoal
-        )
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(contentPadding)
             .verticalScroll(rememberScrollState())
     ) {
-        Column(
-            modifier = Modifier
-                .padding(contentPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            StatsSnapshotCard(
-                streakInfo = state.readingStreakInfo,
-                finishedBookCount = state.finishedBookCount,
-                totalReadingTime = state.readingAnalytics.totalReadingTime,
-                longestStreakInDays = state.readingAnalytics.longestStreakInDays,
-                modifier = Modifier.fillMaxWidth()
-            )
+        UserHeader(
+            userName = "F. Baldhagen",
+            avatarUrl = null,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp)
+        )
 
-            Text(
-                text = "$currentYear Reading Goal",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(horizontal = 8.dp)
+        ProfileListSection(
+            title = "Progress",
+            items = listOf(
+                ProfileItem(title = "My Stats & Achievements", onClick = onNavigateToProgress)
             )
+        )
 
-            ReadingGoalCard(
-                progress = state.readingGoalProgress,
-                onClick = onGoalClicked
+        ProfileListSection(
+            title = "Settings",
+            items = listOf(
+                ProfileItem("Reader Preferences", onClick = { }),
+                ProfileItem("Appearance", onClick = { }),
+                ProfileItem("Notifications", onClick = { })
             )
+        )
 
-            if (state.achievements.isNotEmpty()) {
-                AchievementsCard(achievements = state.achievements)
+        ProfileListSection(
+            title = "Support",
+            items = listOf(
+                ProfileItem("Help & Feedback", onClick = { }),
+                ProfileItem("About", onClick = { })
+            ),
+            modifier = Modifier.clickable {
+                clickCount++
+                if (clickCount >= 7) {
+                    clickCount = 0
+                    onNavigateToDebug()
+                }
             }
+        )
+    }
+}
 
+@Composable
+fun UserHeader(
+    userName: String,
+    avatarUrl: String?,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        AsyncImage(
+            model = avatarUrl,
+            contentDescription = "User Avatar",
+            placeholder = painterResource(id = R.drawable.ic_default_avatar),
+            error = painterResource(id = R.drawable.ic_default_avatar),
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .size(64.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+        )
+        Text(
+            text = userName,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+fun ProfileListSection(
+    title: String,
+    items: List<ProfileItem>,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+        items.forEach { item ->
             ListItem(
-                headlineContent = { Text("Settings") },
-                supportingContent = { Text("Reader preferences and app settings") },
+                headlineContent = { Text(item.title) },
+                leadingContent = item.icon?.let {
+                    { Icon(imageVector = it, contentDescription = null) }
+                },
+                modifier = Modifier.clickable(onClick = item.onClick),
                 trailingContent = {
                     Icon(
                         Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = null
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                },
-                modifier = Modifier.clickable {
-                    clickCount++
-                    if (clickCount >= 7) {
-                        clickCount = 0
-                        onNavigateToDebug()
-                    }
                 }
-            )
-        }
-    }
-}
-
-@Composable
-fun StatsSnapshotCard(
-    streakInfo: ReadingStreakInfo,
-    finishedBookCount: Int,
-    totalReadingTime: kotlin.time.Duration,
-    longestStreakInDays: Int,
-    modifier: Modifier = Modifier
-) {
-    Card(modifier = modifier) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            Text(text = "Your Stats", style = MaterialTheme.typography.titleLarge)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround
-            ) {
-                StatItem(
-                    value = streakInfo.count.toString(),
-                    label = "Current Streak",
-                    status = streakInfo.status
-                )
-                StatItem(
-                    value = longestStreakInDays.toString(),
-                    label = "Longest Streak",
-                    icon = Icons.Default.MilitaryTech,
-                    tint = if (longestStreakInDays > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround
-            ) {
-                StatItem(
-                    value = formatDuration(totalReadingTime),
-                    label = "Time Read",
-                    icon = Icons.Default.AccessTime,
-                    tint = if (totalReadingTime > kotlin.time.Duration.ZERO) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                StatItem(
-                    value = finishedBookCount.toString(),
-                    label = "Books Read",
-                    icon = Icons.Default.WorkspacePremium,
-                    tint = if (finishedBookCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun StatItem(
-    value: String,
-    label: String,
-    status: StreakStatus
-) {
-    val icon: ImageVector
-    val tint: Color
-
-    when (status) {
-        StreakStatus.COMPLETED_TODAY -> {
-            icon = Icons.Default.LocalFireDepartment
-            tint = MaterialTheme.colorScheme.primary
-        }
-        StreakStatus.IN_PROGRESS -> {
-            icon = Icons.Outlined.LocalFireDepartment
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        }
-        StreakStatus.INACTIVE -> {
-            icon = Icons.Outlined.LocalFireDepartment
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-        }
-    }
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = "Streak status: $status",
-            modifier = Modifier.size(32.dp),
-            tint = tint
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = tint,
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-fun StatItem(
-    value: String,
-    label: String,
-    icon: ImageVector,
-    tint: Color
-) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(32.dp),
-            tint = tint
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = tint
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-fun ReadingGoalCard(
-    progress: ReadingGoalProgress,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                text = "Annual Reading Goal",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            CircularGoalIndicator(progress = progress)
-        }
-    }
-}
-
-@Composable
-private fun CircularGoalIndicator(
-    progress: ReadingGoalProgress,
-    modifier: Modifier = Modifier,
-    size: Dp = 120.dp,
-    strokeWidth: Dp = 10.dp
-) {
-    val progressValue = (progress.currentCount.toFloat() / progress.goal.toFloat()).coerceIn(0f, 1f)
-    val isGoalMet = progress.currentCount >= progress.goal
-
-    val progressColor = if (isGoalMet) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.secondary
-    }
-
-    Box(
-        modifier = modifier.size(size),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator(
-            progress = { 1f },
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            strokeWidth = strokeWidth
-        )
-
-        CircularProgressIndicator(
-            progress = { progressValue },
-            modifier = Modifier.fillMaxSize(),
-            color = progressColor,
-            strokeWidth = strokeWidth,
-            strokeCap = StrokeCap.Round
-        )
-
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = progress.currentCount.toString(),
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = progressColor
-            )
-            Text(
-                text = "of ${progress.goal} books",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-fun SetGoalDialog(
-    currentGoal: Int,
-    onDismiss: () -> Unit,
-    onSave: (goal: Int) -> Unit
-) {
-    var text by remember { mutableStateOf(currentGoal.toString()) }
-
-    val goalValue = text.toIntOrNull()
-    val isValid = goalValue != null && goalValue > 0
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Set Your Goal") },
-        text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { newText ->
-                    if (newText.all { it.isDigit() }) {
-                        text = newText
-                    }
-                },
-                label = { Text("Books per year") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-                isError = text.isNotEmpty() && !isValid,
-                supportingText = {
-                    if (text.isNotEmpty() && !isValid) {
-                        Text("Please enter a number greater than 0")
-                    }
-                }
-            )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { goalValue?.let(onSave) },
-                enabled = isValid
-            ) {
-                Text("Save")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
-}
-
-@Composable
-fun AchievementsCard(
-    achievements: List<AchievementDetails>,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            text = "Achievements",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(horizontal = 8.dp)
-        )
-
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(vertical = 8.dp)
-            ) {
-                achievements.forEachIndexed { index, achievement ->
-                    AchievementItem(achievement = achievement)
-                    if (index < achievements.lastIndex) {
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun AchievementItem(
-    achievement: AchievementDetails,
-    modifier: Modifier = Modifier
-) {
-
-    val definition = achievement.definition
-    val userProgress = achievement.userProgress
-
-    val currentTierIndex = userProgress.unlockedTier - 1
-    val isUnlocked = userProgress.unlockedTier > 0
-
-    val nextTierIndex = userProgress.unlockedTier
-    val nextTier = definition.tiers.getOrNull(nextTierIndex)
-
-    val isMaxTierUnlocked = nextTier == null
-    val currentTier = definition.tiers.getOrNull(userProgress.unlockedTier - 1)
-
-    val progressPercent = if (isMaxTierUnlocked) {
-        1f
-    } else {
-        (userProgress.currentProgress.toFloat() / nextTier!!.threshold.toFloat()).coerceIn(0f, 1f)
-    }
-
-    val descriptionText = if (isMaxTierUnlocked) {
-        "Completed!"
-    } else {
-        definition.description.format(nextTier!!.threshold)
-    }
-
-    val (primaryBadgeColor, accentBadgeColor) = if (isUnlocked) {
-        BadgeColors.tierPairs.getOrElse(currentTierIndex) { BadgeColors.tierPairs.last() }
-    } else {
-        BadgeColors.LockedPrimary to BadgeColors.LockedAccent
-    }
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-
-            Box(
-                modifier = Modifier.size(48.dp),
-                contentAlignment = Alignment.Center
-            ) {
-
-
-                TieredBadgeIcon(
-                    primaryColor = primaryBadgeColor,
-                    accentColor = accentBadgeColor,
-                    contentDescription = "Achievement Badge",
-                    modifier = Modifier.fillMaxSize()
-                )
-
-                Image(
-                    painter = painterResource(id = definition.iconRes),
-                    contentDescription = "${definition.name} icon",
-                    modifier = Modifier.size(42.dp),
-                    colorFilter = if (isUnlocked) null else ColorFilter.colorMatrix(
-                        ColorMatrix().apply { setToSaturation(0f) }
-                    ),
-                    alpha = if (isUnlocked) 1.0f else 0.7f
-                )
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = definition.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = descriptionText,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            if (isMaxTierUnlocked) {
-                Icon(
-                    imageVector = Icons.Default.CheckCircle,
-                    contentDescription = "Completed",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            LinearProgressIndicator(
-                progress = { progressPercent },
-                modifier = Modifier.weight(1f),
-                strokeCap = StrokeCap.Round
-            )
-            val progressText = if (isMaxTierUnlocked) {
-                "${currentTier?.threshold ?: userProgress.currentProgress}"
-            } else {
-                "${userProgress.currentProgress}/${nextTier?.threshold}"
-            }
-            Text(
-                text = progressText,
-                style = MaterialTheme.typography.labelSmall
             )
         }
     }

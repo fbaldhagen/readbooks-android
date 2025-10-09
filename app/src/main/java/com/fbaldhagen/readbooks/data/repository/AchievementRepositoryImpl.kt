@@ -39,7 +39,11 @@ class AchievementRepositoryImpl @Inject constructor(
             name = "Bookworm",
             description = "Finish %d books",
             iconRes = R.drawable.book_worm,
-            tiers = listOf(AchievementTier(1), AchievementTier(10), AchievementTier(50))
+            tiers = listOf(
+                AchievementTier("Bronze", 1),
+                AchievementTier("Silver", 10),
+                AchievementTier("Gold", 50)
+            )
         ),
         Achievement(
             id = AchievementId.PAGE_TURNER,
@@ -47,9 +51,9 @@ class AchievementRepositoryImpl @Inject constructor(
             description = "Read for a total of %d minutes",
             iconRes = R.drawable.page_turner,
             tiers = listOf(
-                AchievementTier(threshold = 10 * 60),
-                AchievementTier(threshold = 50 * 60),
-                AchievementTier(threshold = 200 * 60)
+                AchievementTier("Bronze", threshold = 10 * 60),
+                AchievementTier("Silver", threshold = 50 * 60),
+                AchievementTier("Gold", threshold = 200 * 60)
             )
         ),
         Achievement(
@@ -57,14 +61,22 @@ class AchievementRepositoryImpl @Inject constructor(
             name = "Night Owl",
             description = "Read after midnight %d times",
             iconRes = R.drawable.night_owl,
-            tiers = listOf(AchievementTier(1), AchievementTier(5), AchievementTier(20))
+            tiers = listOf(
+                AchievementTier("Bronze", 1),
+                AchievementTier("Silver", 5),
+                AchievementTier("Gold", 20)
+            )
         ),
         Achievement(
             id = AchievementId.STREAK_STAR,
             name = "Streak Star",
             description = "Maintain a reading streak for %d days",
-            iconRes = R.drawable.streak_star,
-            tiers = listOf(AchievementTier(7), AchievementTier(30), AchievementTier(100))
+            iconRes = R.drawable.streak_star_v2,
+            tiers = listOf(
+                AchievementTier("Bronze", 7),
+                AchievementTier("Silver", 30),
+                AchievementTier("Gold", 100)
+            )
         )
     ).associateBy { it.id }
 
@@ -107,6 +119,7 @@ private fun UserAchievementEntity.toDomain(): UserAchievement {
         achievementId = this.achievementId,
         currentProgress = this.currentProgress,
         unlockedTier = this.unlockedTier,
+        unlockedDate = this.unlockedDate,
         lastProgressTimestamp = this.lastProgressTimestamp
     )
 }
@@ -116,6 +129,7 @@ private fun UserAchievement.toEntity(): UserAchievementEntity {
         achievementId = this.achievementId,
         currentProgress = this.currentProgress,
         unlockedTier = this.unlockedTier,
+        unlockedDate = this.unlockedDate,
         lastProgressTimestamp = this.lastProgressTimestamp
     )
 }

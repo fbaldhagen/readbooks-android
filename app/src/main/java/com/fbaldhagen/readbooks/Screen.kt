@@ -17,7 +17,8 @@ sealed class Screen(
     val icon: ImageVector? = null,
     val arguments: List<NamedNavArgument> = emptyList()
 ) {
-    // --- Bottom Bar Screens ---
+
+    // -- BOTTOM SCREENS --
     data object Home : Screen(
         route = "home",
         label = "Home",
@@ -30,26 +31,31 @@ sealed class Screen(
         icon = Icons.AutoMirrored.Filled.MenuBook
     )
 
-    data object Profile : Screen(
-        route = "profile",
-        label = "Profile",
-        icon = Icons.Default.Person
-    )
-
-    // --- Debug Screen (not in bottom bar) ---
-    data object Debug : Screen(
-        route = "debug",
-        label = "Debug",
-        icon = Icons.Default.BugReport
-    )
-
     data object Discover : Screen(
         route = "discover",
         label = "Discover",
         icon = Icons.Default.FindReplace
     )
 
-    // --- Detail Screen (not in bottom bar) ---
+    data object Profile : Screen(
+        route = "profile",
+        label = "Profile",
+        icon = Icons.Default.Person
+    )
+
+    // -- END BOTTOM SCREENS --
+
+    data object Progress : Screen(
+        route = "progress",
+        label = "Progress",
+    )
+
+    data object Debug : Screen(
+        route = "debug",
+        label = "Debug",
+        icon = Icons.Default.BugReport
+    )
+
     data object BookDetails : Screen(
         route = "book_details?localId={$LOCAL_ID_ARG}&remoteId={$REMOTE_ID_ARG}",
         label = "Book Details",
@@ -68,7 +74,6 @@ sealed class Screen(
         fun createRouteForRemote(remoteId: String): String = "book_details?remoteId=$remoteId"
     }
 
-    // --- ToC Screen (not in bottom bar) ---
     data object TableOfContents : Screen(
         route = "toc/{$BOOK_ID_ARG}",
         label = "Table of Contents",
@@ -81,17 +86,5 @@ sealed class Screen(
         const val BOOK_ID_ARG = "bookId"
         const val LOCAL_ID_ARG = "localId"
         const val REMOTE_ID_ARG = "remoteId"
-        fun fromRoute(route: String?): Screen? {
-            val baseRoute = route?.substringBefore("?")
-            return when (baseRoute) {
-                Home.route -> Home
-                Library.route -> Library
-                Profile.route -> Profile
-                "book_details" -> BookDetails
-                "toc" -> TableOfContents
-                Debug.route -> Debug
-                else -> null
-            }
-        }
     }
 }

@@ -17,6 +17,9 @@ data class UserAchievementEntity(
     @ColumnInfo(name = "unlocked_tier")
     val unlockedTier: Int = 0,
 
+    @ColumnInfo(name = "unlocked_date")
+    val unlockedDate: java.time.LocalDate? = null,
+
     @ColumnInfo(name = "last_progress_timestamp")
     val lastProgressTimestamp: Long? = null
 )

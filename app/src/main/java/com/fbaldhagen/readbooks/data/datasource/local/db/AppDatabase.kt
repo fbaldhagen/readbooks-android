@@ -3,12 +3,10 @@ package com.fbaldhagen.readbooks.data.datasource.local.db
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
 import com.fbaldhagen.readbooks.data.model.BookCollectionCrossRefEntity
-import com.fbaldhagen.readbooks.data.model.CollectionEntity
 import com.fbaldhagen.readbooks.data.model.BookEntity
 import com.fbaldhagen.readbooks.data.model.BookmarkEntity
+import com.fbaldhagen.readbooks.data.model.CollectionEntity
 import com.fbaldhagen.readbooks.data.model.DiscoverBookEntity
 import com.fbaldhagen.readbooks.data.model.ReadingSessionEntity
 import com.fbaldhagen.readbooks.data.model.UserAchievementEntity
@@ -34,8 +32,4 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun userAchievementDao(): UserAchievementDao
     abstract fun collectionDao(): CollectionDao
     abstract fun discoverBookDao(): DiscoverBookDao
-
-    companion object {
-
-    }
 }
